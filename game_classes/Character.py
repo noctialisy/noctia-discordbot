@@ -106,7 +106,7 @@ class Character:
         if self.raw_stats != []:
             return True
         
-        if self.stat_point >= 0:
+        if self.stat_point > 0:
             return True
         
         return False
@@ -142,7 +142,7 @@ class Character:
     def set_raw_stat(self, raw_stat_index: int, character_stat: str, empty: bool):
         if empty:
             self.raw_stats = []
-            
+
         else:
             self.raw_stats.sort(reverse=True)
 
