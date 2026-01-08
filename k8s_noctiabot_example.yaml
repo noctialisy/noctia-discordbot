@@ -19,7 +19,7 @@ spec:
       volumes:
       - name: noctia-discordbot-source
         hostPath:
-          path: ${k8s.deploy.path}noctia-discordbot-source
+          path: ${k8s.deploy.path}
 
       containers:
       - name: python
