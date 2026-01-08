@@ -18,7 +18,7 @@ class Character:
         self.backstory = ""
 
         self.role = ""
-        self.level = 0
+        self.level = 1
         self.role_level = 0
         self.hp=0
         self.mp=0
@@ -83,7 +83,18 @@ class Character:
         """
         Return the character's description
         """
-        return self.description
+
+        character_description = [
+            self.description + "\n\n" +
+            "Your stats are as follow:\n\n" +
+            "Level: " + str(self.level) + "\n" +
+            "HP: " + str(self.hp) + "\n" +
+            "MP: " + str(self.mp) + "\n" +
+            str(self.stats)
+
+        ]
+
+        return character_description
     
     def has_unspent_stats(self):
         """
