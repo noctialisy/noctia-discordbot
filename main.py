@@ -200,7 +200,7 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
         if character != "Character not found or not loaded":
             character.set_raw_stat(raw_stat_index, character_stat)
             GameSystem.save_character(user_id, character)
-            await ctx.response.send_message("RAW Stat " + str(character.get_raw_stats[raw_stat_index]) + " Assigned to " + character_stat, ephemeral=True)
+            await ctx.response.send_message("RAW Stat " + str(character.get_raw_stats()[raw_stat_index]) + " Assigned to " + character_stat, ephemeral=True)
 
         else:
             await ctx.response.send_message("You don't have a RP character currently.", ephemeral=True)
@@ -262,7 +262,7 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
                 raw_stat_explain_string = ""
 
                 if raw_stat_points != []:
-                    raw_stat_explain_string = f"For RAW stats using the command \"/set_character_stats_raw 0 strength\" will assign {str(raw_stat_points[0])} to your Strength stat (First index)"
+                    raw_stat_explain_string = f"For RAW stats using the command \"/set_character_stats_raw 0 strength\" will assign {str(raw_stat_points[0])} to your Strength stat (First stat)"
 
                 await ctx.followup.send(
                     "Hey! You have unspent stat points! \n\n" +
