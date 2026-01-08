@@ -160,8 +160,9 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
                 f"What role do you want to pick for your character? (Available starting roles: {str_option_roles}. Prepend with \"!\")",
                 ephemeral=True
             )
-
-            character.set_raw_stats(result_values.sort(reverse=True))
+            
+            result_values.sort(reverse=True)
+            character.set_raw_stats(result_values)
 
 
             while True:
