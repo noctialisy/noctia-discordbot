@@ -24,6 +24,7 @@ class Character:
         self.mp=0
         self.sp=0
         self.raw_stats = []
+        self.stat_point = 0
         self.stats = {
             "strength": 0,
             "dexterity": 0,
@@ -38,6 +39,11 @@ class Character:
 
         self.inventory = Inventory()
 
+    
+    
+    # =========================================================
+    # MAINS
+    # =========================================================
     def create(self, name: str, surname: str, race: str, gender: str, nsfw: bool):
         """
         Create a new RP character
@@ -73,13 +79,53 @@ class Character:
 
         return "Creation: success!"
     
+    def describe(self):
+        """
+        Return the character's description
+        """
+        return self.description
+    
+    def has_unspent_stats(self):
+        """
+        Docstring for has_unspent_stats
+        
+        :return: True if the character has unspent stats, otherwise False
+        :rtype: bool
+        """
+        if self.raw_stats != []:
+            return True
+        
+        if self.stat_point >= 0:
+            return True
+        
+        return False
+    
+    
+    # =========================================================
+    # GETS
+    # =========================================================
     def get_name(self):
         return self.name
     
+    def get_stat_points(self):
+        return self.stat_point
+    
+    def get_raw_stats(self):
+        return self.raw_stats
+    
+
+
+    # =========================================================
+    # SETS
+    # =========================================================
     def set_raw_stats(self, raw_stats):
         self.raw_stats = raw_stats
 
-    def assign_raw_stat(self, raw_stat_index: int, character_stat: str):
+    def set_stat(self, stat_value: int, character_stat: str):
+        if stat_value <= self.stat_point and character_stat in self.CHARACTER_STATS:
+            self.stats[character_stat] += stat_value
+
+    def set_raw_stat(self, raw_stat_index: int, character_stat: str):
         if 0 < raw_stat_index < len(self.raw_stats):
             if character_stat in self.CHARACTER_STATS:
                 self.stats[character_stat] = self.raw_stats[raw_stat_index]
@@ -93,12 +139,6 @@ class Character:
         :type role: str
         """
         self.role = role
-    
-    def describe(self):
-        """
-        Return the character's description
-        """
-        return self.description
 
     
 

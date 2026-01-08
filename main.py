@@ -77,6 +77,9 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
     # RP constants
     CHARACTER_RACES = Character.CHARACTER_RACES
     CHARACTER_GENDERS = Character.CHARACTER_GENDERS
+    CHARACTER_STATS = Character.CHARACTER_STATS
+
+
 
     # Autocomplete character races
     # -------------------------------------
@@ -87,13 +90,20 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
     # -------------------------------------
     async def get_character_genders(ctx: discord.AutocompleteContext):
         return [gender for gender in CHARACTER_GENDERS if gender.startswith(ctx.value.lower())]
+    
+    # Autocomplete character stats
+    # -------------------------------------
+    async def get_character_stats(ctx: discord.AutocompleteContext):
+        return [stat for stat in CHARACTER_GENDERS if stat.startswith(ctx.value.lower())]
+    
+
 
     # Create a new RP character
     # -------------------------------------
     @bot.slash_command(
-    name="create_character",
-    description="Create your RP character in this server",
-    guild_ids=[discord_main_guild_id]
+        name="create_character",
+        description="Create your RP character in this server",
+        guild_ids=[discord_main_guild_id]
     )
     @option("name", description="Your character's first name")
     @option("surname", description="Your character's family name")
@@ -168,24 +178,106 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
                 await ctx.followup.send(f"Your character has been created and saved!.", ephemeral=True)
 
 
-    # Check your RP Character
+    
+    # Assign RAW RP character stats
     # -------------------------------------
     @bot.slash_command(
-    name="check_character",
-    description="Check your RP Character status",
-    guild_ids=[discord_main_guild_id]
+        name="set_character_stats_raw",
+        description="Allocate your RAW stats from the initial character rolls",
+        guild_ids=[discord_main_guild_id]
     )
-    async def check_character(ctx):
+    @option("raw_stat_index", description="The index of the RAW stat you want to assign (check with /check_character)")
+    @option("character_stat", description="The stat you want to assign points to", autocomplete=get_character_stats)
+    async def set_character_stats_raw(ctx, raw_stat_index: int, character_stat: str):
+        if character_stat not in CHARACTER_STATS:
+            await ctx.response.send_message("The stat name entered is not valid", ephemeral=True)
+            return
+        
         user_id = ctx.author.id
         character = GameSystem.load_character(user_id)
 
+        # Character existence check
         if character != "Character not found or not loaded":
-            await ctx.response.send_message(character.describe(), ephemeral=True)
+            character.set_raw_stat(raw_stat_index, character_stat)
+            GameSystem.save_character(user_id, character)
+            await ctx.response.send_message("RAW Stat " + str(character.get_raw_stats[raw_stat_index]) + " Assigned to " + character_stat, ephemeral=True)
 
         else:
             await ctx.response.send_message("You don't have a RP character currently.", ephemeral=True)
 
 
+
+    # Assign RP character stats
+    # -------------------------------------
+    @bot.slash_command(
+        name="set_character_stats",
+        description="Allocate your unspent stats points",
+        guild_ids=[discord_main_guild_id]
+    )
+    @option("stat_value", description="The stat value to add to your current (Note you need to have the points first)")
+    @option("character_stat", description="The stat to increase", autocomplete=get_character_stats)
+    async def set_character_stats(ctx, stat_value: int, character_stat: str):
+        if character_stat not in CHARACTER_STATS:
+            await ctx.response.send_message("The stat name entered is not valid", ephemeral=True)
+            return
+        
+        user_id = ctx.author.id
+        character = GameSystem.load_character(user_id)
+
+        # Character existence check
+        if character != "Character not found or not loaded":
+
+            # Check if the character has the stats they want to assign
+            if character.get_stat_points() >= stat_value:
+                character.set_stat(stat_value, character_stat)
+                GameSystem.save_character(user_id, character)
+                await ctx.response.send_message("Character stats assigned and saved!", ephemeral=True)
+
+            else:
+                await ctx.response.send_message("You lack that amount of stat points", ephemeral=True)
+
+        else:
+            await ctx.response.send_message("You don't have a RP character currently.", ephemeral=True)
+
+
+
+    # Check your RP Character
+    # -------------------------------------
+    @bot.slash_command(
+        name="check_character",
+        description="Check your RP Character status",
+        guild_ids=[discord_main_guild_id]
+    )
+    @option("silent", description="Doesn't print your character and only give you info about your stats (Default: False)")
+    async def check_character(ctx, silent=False):
+        user_id = ctx.author.id
+        character = GameSystem.load_character(user_id)
+
+        if character != "Character not found or not loaded":
+            await ctx.response.send_message(character.describe(), ephemeral=silent)
+
+            if character.has_unspent_stats() == True:
+                stat_points = character.get_stat_points()
+                raw_stat_points = character.get_raw_stats()
+                raw_stat_explain_string = ""
+
+                if raw_stat_points != []:
+                    raw_stat_explain_string = f"For RAW stats using the command \"/set_character_stats_raw 1 strength\" will assign {str(raw_stat_points[0])} to your Strength stat"
+
+                await ctx.followup.send(
+                    "Hey! You have unspent stat points! \n\n" +
+                    f"You have {str(stat_points)} stat points and {str(raw_stat_points)} raw stats.\n" +
+                    "To assign these, use the /set_character_stats and /set_character_stats_raw commands" +
+                    raw_stat_explain_string,
+                    ephemeral=True
+                )
+
+
+        else:
+            await ctx.response.send_message("You don't have a RP character currently.", ephemeral=False)
+
+
+    
     # Roll a dice (DnD style)
     # -------------------------------------
     @bot.slash_command(
@@ -210,6 +302,8 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
 
         await ctx.respond(response)
 
+    
+    
     # Run bot
     # -------------------------------------
     bot.run(token)
