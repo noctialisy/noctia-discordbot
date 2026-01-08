@@ -160,7 +160,7 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
                 f"What role do you want to pick for your character? (Available starting roles: {str_option_roles}. Prepend with \"!\")",
                 ephemeral=True
             )
-            
+
             result_values.sort(reverse=True)
             character.set_raw_stats(result_values)
 
@@ -234,12 +234,12 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
 
         # Character existence check
         if character != "Character not found or not loaded":
-            character.set_raw_stat(0, first_stat)
-            character.set_raw_stat(1, second_stat)
-            character.set_raw_stat(2, third_stat)
-            character.set_raw_stat(3, fourth_stat)
-            character.set_raw_stat(4, fifth_stat)
-            character.set_raw_stat(5, sixth_stat)
+            character.set_raw_stat(0, first_stat, False)
+            character.set_raw_stat(1, second_stat, False)
+            character.set_raw_stat(2, third_stat, False)
+            character.set_raw_stat(3, fourth_stat, False)
+            character.set_raw_stat(4, fifth_stat, False)
+            character.set_raw_stat(5, sixth_stat, False)
             character.set_raw_stat(0, "", True)
 
             GameSystem.save_character(user_id, character)
