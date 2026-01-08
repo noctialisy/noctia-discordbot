@@ -137,7 +137,7 @@ class Character:
             self.stats[character_stat] += stat_value
 
     def set_raw_stat(self, raw_stat_index: int, character_stat: str):
-        if 0 < raw_stat_index < len(self.raw_stats):
+        if 0 <= raw_stat_index < len(self.raw_stats):
             if character_stat in self.CHARACTER_STATS:
                 self.stats[character_stat] = self.raw_stats[raw_stat_index]
                 self.raw_stats.pop(raw_stat_index)
