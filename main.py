@@ -221,7 +221,7 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
         if character != "Character not found or not loaded":
             char_raw_stats = character.get_raw_stats()
 
-            if 0 < raw_stat_index < len(char_raw_stats):
+            if 0 <= raw_stat_index < len(char_raw_stats):
                 character.set_raw_stat(raw_stat_index, character_stat)
                 GameSystem.save_character(user_id, character)
                 await ctx.response.send_message("RAW Stat " + str(char_raw_stats[raw_stat_index]) + " Assigned to " + character_stat, ephemeral=True)
