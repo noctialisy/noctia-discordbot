@@ -1,4 +1,4 @@
-import pickle
+import os, pickle
 from .Character import Character
 
 class GameSystem:
@@ -35,3 +35,6 @@ class GameSystem:
         """
         with open('./game_saves/character_'+str(user_id)+'.pickle', 'wb') as file:
             pickle.dump(character, file)
+
+    def delete_character(user_id: int):
+        os.remove('./game_saves/character_'+str(user_id)+'.pickle')

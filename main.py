@@ -176,8 +176,29 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
                 
                 GameSystem.save_character(user_id, character)
                 await ctx.followup.send(f"Your character has been created and saved!.", ephemeral=True)
+    
 
 
+    # Delete a character
+    # -------------------------------------
+    @bot.slash_command(
+        name="delete_character",
+        description="Delete your RP character in this server (This can't be reversed)",
+        guild_ids=[discord_main_guild_id]
+    )
+    async def create_character(ctx):
+        user_id = ctx.author.id
+
+        # Check if the user already has a character
+        character = GameSystem.load_character(user_id)
+
+        if character != "Character not found or not loaded":
+            GameSystem.delete_character(user_id)
+            await ctx.response.send_message("Your character has been deleted. Now you can create a new one.", ephemeral=True)
+        else:
+            await ctx.response.send_message("You don't have a RP character currently.", ephemeral=True)
+    
+    
     
     # Assign RAW RP character stats
     # -------------------------------------
