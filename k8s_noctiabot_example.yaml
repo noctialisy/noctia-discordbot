@@ -1,0 +1,33 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: noctia-discordbot
+  labels:
+    app: noctia-discordbot
+
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: noctia-discordbot
+  template:
+    metadata:
+      labels:
+        app: noctia-discordbot
+    spec:
+      volumes:
+      - name: noctia-discordbot-source
+        hostPath:
+          path: ${k8s.deploy.path}noctia-discordbot-source
+
+      containers:
+      - name: python
+        image: "${k8s.container.image}"
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+          - name: noctia-discordbot-source
+            mountPath: /usr/src/app/
+
+      imagePullSecrets:
+        - name: ${k8s.container.image.secret}

@@ -53,3 +53,4 @@ docs/_build/
 old.*
 *.pickle
 settings.json
+k8s_noctiabot.yaml
