@@ -262,12 +262,12 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
                 raw_stat_explain_string = ""
 
                 if raw_stat_points != []:
-                    raw_stat_explain_string = f"For RAW stats using the command \"/set_character_stats_raw 1 strength\" will assign {str(raw_stat_points[0])} to your Strength stat"
+                    raw_stat_explain_string = f"For RAW stats using the command \"/set_character_stats_raw 0 strength\" will assign {str(raw_stat_points[0])} to your Strength stat (First index)"
 
                 await ctx.followup.send(
                     "Hey! You have unspent stat points! \n\n" +
                     f"You have {str(stat_points)} stat points and {str(raw_stat_points)} raw stats.\n" +
-                    "To assign these, use the /set_character_stats and /set_character_stats_raw commands" +
+                    "To assign these, use the /set_character_stats and /set_character_stats_raw commands\n" +
                     raw_stat_explain_string,
                     ephemeral=True
                 )
