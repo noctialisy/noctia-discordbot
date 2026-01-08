@@ -1,0 +1,1 @@
+# This class handles Skills (DnD style, History, Lockpicking, survival, medicine, etc.)

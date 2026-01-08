@@ -1,0 +1,1 @@
+# This class handles Abilities (to use XIV: a Paladin's healing, a Dragoon's Leap, etc.)
