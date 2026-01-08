@@ -161,7 +161,7 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
                 ephemeral=True
             )
 
-            character.set_raw_stats(result_values)
+            character.set_raw_stats(result_values.sort(reverse=True))
 
 
             while True:
@@ -203,28 +203,46 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
     # Assign RAW RP character stats
     # -------------------------------------
     @bot.slash_command(
-        name="set_character_stats_raw",
-        description="Allocate your RAW stats from the initial character rolls",
+        name="set_character_stats_order",
+        description="Allocate your RAW stats from the initial character rolls following a stat precedence setup",
         guild_ids=[discord_main_guild_id]
     )
-    @option("raw_stat_index", description="The index of the RAW stat you want to assign (check with /check_character)")
-    @option("character_stat", description="The stat you want to assign points to", autocomplete=get_character_stats)
-    async def set_character_stats_raw(ctx, raw_stat_index: int, character_stat: str):
-        if character_stat not in CHARACTER_STATS:
-            await ctx.response.send_message("The stat name entered is not valid", ephemeral=True)
-            return
+    @option("first_stat", description="Your highest stat", autocomplete=get_character_stats)
+    @option("second_stat", description="Your second highest stat", autocomplete=get_character_stats)
+    @option("third_stat", description="Your third highest stat", autocomplete=get_character_stats)
+    @option("fourth_stat", description="Your highest stat", autocomplete=get_character_stats)
+    @option("fifth_stat", description="Your highest stat", autocomplete=get_character_stats)
+    @option("sixth_stat", description="Your highest stat", autocomplete=get_character_stats)
+    async def set_character_stats_order(ctx, first_stat: str, second_stat: str, third_stat: str, fourth_stat: str, fifth_stat: str, sixth_stat: str):
+        check_array = [
+            first_stat,
+            second_stat,
+            third_stat,
+            fourth_stat,
+            fifth_stat,
+            sixth_stat
+        ]
+
+        for stat in check_array:
+            if stat not in CHARACTER_STATS:
+                await ctx.response.send_message("The stat name entered is not valid", ephemeral=True)
+                return
         
         user_id = ctx.author.id
         character = GameSystem.load_character(user_id)
 
         # Character existence check
         if character != "Character not found or not loaded":
-            char_raw_stats = character.get_raw_stats()
+            character.set_raw_stat(0, first_stat)
+            character.set_raw_stat(1, second_stat)
+            character.set_raw_stat(2, third_stat)
+            character.set_raw_stat(3, fourth_stat)
+            character.set_raw_stat(4, fifth_stat)
+            character.set_raw_stat(5, sixth_stat)
+            character.set_raw_stat(0, "", True)
 
-            if 0 <= raw_stat_index < len(char_raw_stats):
-                character.set_raw_stat(raw_stat_index, character_stat)
-                GameSystem.save_character(user_id, character)
-                await ctx.response.send_message("RAW Stat " + str(char_raw_stats[raw_stat_index]) + " Assigned to " + character_stat, ephemeral=True)
+            GameSystem.save_character(user_id, character)
+            await ctx.response.send_message("RAW Stat composition assigned: " + str(character.get_stats()), ephemeral=True)
 
         else:
             await ctx.response.send_message("You don't have a RP character currently.", ephemeral=True)
@@ -285,13 +303,10 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
                 raw_stat_points = character.get_raw_stats()
                 raw_stat_explain_string = ""
 
-                if raw_stat_points != []:
-                    raw_stat_explain_string = f"For RAW stats using the command \"/set_character_stats_raw 0 strength\" will assign {str(raw_stat_points[0])} to your Strength stat (First stat)"
-
                 await ctx.followup.send(
                     "Hey! You have unspent stat points! \n\n" +
                     f"You have {str(stat_points)} stat points and {str(raw_stat_points)} raw stats.\n" +
-                    "To assign these, use the /set_character_stats and /set_character_stats_raw commands\n" +
+                    "To assign these, use the /set_character_stats and /set_character_stats_order commands\n" +
                     raw_stat_explain_string,
                     ephemeral=True
                 )

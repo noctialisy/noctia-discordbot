@@ -118,6 +118,9 @@ class Character:
     def get_name(self):
         return self.name
     
+    def get_stats(self):
+        return self.stats
+    
     def get_stat_points(self):
         return self.stat_point
     
@@ -136,11 +139,17 @@ class Character:
         if stat_value <= self.stat_point and character_stat in self.CHARACTER_STATS:
             self.stats[character_stat] += stat_value
 
-    def set_raw_stat(self, raw_stat_index: int, character_stat: str):
-        if 0 <= raw_stat_index < len(self.raw_stats):
-            if character_stat in self.CHARACTER_STATS:
-                self.stats[character_stat] = self.raw_stats[raw_stat_index]
-                self.raw_stats.pop(raw_stat_index)
+    def set_raw_stat(self, raw_stat_index: int, character_stat: str, empty: bool):
+        if empty:
+            self.raw_stats = []
+            
+        else:
+            self.raw_stats.sort(reverse=True)
+
+            if 0 <= raw_stat_index < len(self.raw_stats):
+                if character_stat in self.CHARACTER_STATS:
+                    self.stats[character_stat] = self.raw_stats[raw_stat_index]
+
     
     def set_role(self, role: str):
         """
