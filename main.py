@@ -18,7 +18,7 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
 
     # Main variables and bot intents
     # -------------------------------------
-    settings = json.loads(settings_file) # Load settings file, if this fails the bot won't start
+    settings = json.load(settings_file) # Load settings file, if this fails the bot won't start
     discord_test_guild_id = settings["discord.test.guild.id"]
     discord_main_guild_id = settings["discord.main.guild.id"]
     token = settings["discord.bot.token"]
