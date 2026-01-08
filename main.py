@@ -94,7 +94,7 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
     # Autocomplete character stats
     # -------------------------------------
     async def get_character_stats(ctx: discord.AutocompleteContext):
-        return [stat for stat in CHARACTER_GENDERS if stat.startswith(ctx.value.lower())]
+        return [stat for stat in CHARACTER_STATS if stat.startswith(ctx.value.lower())]
     
 
 
