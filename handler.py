@@ -1,4 +1,4 @@
-import os, sys, json, shutil
+import os, sys, json, shutil, subprocess
 
 
 def main():
@@ -13,6 +13,14 @@ def main():
             settings = json.load(settings_file)
 
             for command in commands:
+                if command == "delete":
+                    subprocess.run('kubectl delete -f ./k8s_noctiabot.yaml')
+                    exit()
+
+                if command == "apply":
+                    subprocess.run('kubectl apply -f ./k8s_noctiabot.yaml')
+                    exit()
+                
                 if command == "build":
                     deploy_path = settings["k8s.deploy.path"]
                     container_image = settings["k8s.container.image"]
@@ -28,6 +36,8 @@ def main():
 
                     with open('k8s_noctiabot.yaml', 'w', encoding='utf-8') as file:
                         file.write(filedata)
+
+                    exit()
 
 main()
 
