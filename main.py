@@ -275,7 +275,7 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
         character = GameSystem.load_character(user_id)
 
         if character != "Character not found or not loaded":
-            await ctx.response.send_message(character.describe(), ephemeral=silent)
+            await ctx.response.send_message(str(character.describe()), ephemeral=silent)
 
             if character.has_unspent_stats() == True:
                 stat_points = character.get_stat_points()

@@ -94,7 +94,7 @@ class Character:
 
         ]
 
-        return character_description
+        return character_description[0]
     
     def has_unspent_stats(self):
         """
