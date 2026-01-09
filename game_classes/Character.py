@@ -1,45 +1,10 @@
+from .Entity import Entity
+from .Role import Role
 from .Inventory import Inventory
+from .Dice import Dice
 
-class Character:
-    CHARACTER_RACES = ["Human", "Elf", "Catfolk", "Kitsune", "Lupine"]
-    CHARACTER_GENDERS = ["Male", "Female"]
-    CHARACTER_STATS = ["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"]
 
-    def __init__(self):
-        self.name = ""
-        self.surname = ""
-        self.gender = ""
-        self.race = ""
-        self.height = ""
-        self.weight = ""
-        self.nsfw = False
-
-        self.description = ""
-        self.backstory = ""
-
-        self.role = ""
-        self.level = 1
-        self.role_level = 0
-        self.hp=0
-        self.mp=0
-        self.sp=0
-        self.raw_stats = []
-        self.stat_point = 0
-        self.stats = {
-            "strength": 0,
-            "dexterity": 0,
-            "constitution": 0,
-            "intelligence": 0,
-            "wisdom": 0,
-            "charisma": 0,
-            "luck": 0
-        }
-        self.skills = []
-        self.abilities = []
-
-        self.inventory = Inventory()
-
-    
+class Character(Entity):
     
     # =========================================================
     # MAINS
@@ -62,18 +27,24 @@ class Character:
         :return: Creation result
         :rtype: str
         """
+        self.type = "Character"
         self.name = name
         self.surname = surname
 
-        if race not in self.CHARACTER_RACES:
+        if race not in self.RACES:
             return "Creation Failed: Race not in scope"
         
-        if gender not in self.CHARACTER_GENDERS:
+        if gender not in self.GENDERS:
             return "Creation Failed: Gender not in scope"
         
         self.race = race
         self.gender = gender
         self.nsfw = nsfw
+
+        if self.gender == "Female":
+            self.pronoun_self = "her"
+        else:
+            self.pronoun_self = "his"
 
         self.description = f"You are {name} a {gender} {race}"
 
@@ -89,6 +60,7 @@ class Character:
             "Your stats are as follow:\n\n" +
             "Level: " + str(self.level) + "\n" +
             "HP: " + str(self.hp) + "\n" +
+            "SP: " + str(self.sp) + "\n" +
             "MP: " + str(self.mp) + "\n" +
             str(self.stats)
 
@@ -111,16 +83,17 @@ class Character:
         
         return False
     
-    
+    def check_level_up(self):
+        if self.exp >= self.req_exp:
+            self.level += 1
+            self.exp -= self.req_exp
+
+
+            todo = "Levelup Logic"
+
     # =========================================================
     # GETS
     # =========================================================
-    def get_name(self):
-        return self.name
-    
-    def get_stats(self):
-        return self.stats
-    
     def get_stat_points(self):
         return self.stat_point
     
@@ -136,7 +109,7 @@ class Character:
         self.raw_stats = raw_stats
 
     def set_stat(self, stat_value: int, character_stat: str):
-        if stat_value <= self.stat_point and character_stat in self.CHARACTER_STATS:
+        if stat_value <= self.stat_point and character_stat in self.STATS:
             self.stats[character_stat] += stat_value
 
     def set_raw_stat(self, raw_stat_index: int, character_stat: str, empty: bool):
@@ -147,9 +120,8 @@ class Character:
             self.raw_stats.sort(reverse=True)
 
             if 0 <= raw_stat_index < len(self.raw_stats):
-                if character_stat in self.CHARACTER_STATS:
+                if character_stat in self.STATS:
                     self.stats[character_stat] = self.raw_stats[raw_stat_index]
-
     
     def set_role(self, role: str):
         """
@@ -158,7 +130,7 @@ class Character:
         :param role: The role to assign to the character
         :type role: str
         """
-        self.role = role
+        self.role = Role(role)
 
     
 

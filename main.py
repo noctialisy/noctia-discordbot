@@ -75,9 +75,9 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
     # RP Section
     # =========================================================
     # RP constants
-    CHARACTER_RACES = Character.CHARACTER_RACES
-    CHARACTER_GENDERS = Character.CHARACTER_GENDERS
-    CHARACTER_STATS = Character.CHARACTER_STATS
+    CHARACTER_RACES = Character.RACES
+    CHARACTER_GENDERS = Character.GENDERS
+    CHARACTER_STATS = Character.STATS
 
 
 
@@ -166,7 +166,7 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
 
 
             while True:
-                msg = await bot.wait_for("message", check=lambda msg: msg.author == ctx.author and msg.channel.id == ctx.channel.id, timeout=30)
+                msg = await bot.wait_for("message", check=lambda msg: msg.author == ctx.author and msg.channel.id == ctx.channel.id and msg.content.startswith("!"), timeout=15)
                 character_role = str(msg.content).replace("!", "")
                 
                 # Remove the message
@@ -177,6 +177,7 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
                 
                 GameSystem.save_character(user_id, character)
                 await ctx.followup.send(f"Your character has been created and saved!.", ephemeral=True)
+                return
     
 
 
@@ -187,7 +188,7 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
         description="Delete your RP character in this server (This can't be reversed)",
         guild_ids=[discord_main_guild_id]
     )
-    async def create_character(ctx):
+    async def delete_character(ctx):
         user_id = ctx.author.id
 
         # Check if the user already has a character
@@ -317,6 +318,59 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
             await ctx.response.send_message("You don't have a RP character currently.", ephemeral=False)
 
 
+    
+    # Cast and ability using your character
+    # -------------------------------------
+    @bot.slash_command(
+        name="rp_cast",
+        description="Cast an ability using your RP character",
+        guild_ids=[discord_main_guild_id]
+    )
+    @option("ability_name", description="The ability you want to cast")
+    @option("target", description="The target of the ability (Optional)")
+    async def rp_cast(ctx, ability_name: str, target = None):
+        user_id = ctx.author.id
+        character = GameSystem.load_character(user_id)
+
+        if character != "Character not found or not loaded":
+            target = str(target).replace("@", "").replace("<", "").replace(">", "")
+
+            files = os.listdir('./game_saves')
+            is_user = False
+
+            for file_name in files:
+                if target in file_name:
+                    is_user = True
+                    break
+
+
+            if is_user:
+                target_character = GameSystem.load_character(target)
+
+                if target_character == "Character not found or not loaded":
+                    await ctx.response.send_message("It seems that the target of this command is a discord member, but they don't have a character yet.", ephemeral=False)
+                    return
+                
+                else:
+                    character_ability_res = character.use_ability(ability_name, target_character)
+
+                    if type(character_ability_res) == str:
+                        await ctx.response.send_message(f"{character.name} {character_ability_res}", ephemeral=False)
+
+                    else:
+                        await ctx.response.send_message(f"{character.name} {character_ability_res[1]["cast"]}!", ephemeral=False)
+
+                        if character_ability_res[0] == "success":
+                            await ctx.followup.send(f"{character_ability_res[1]["success"]}", ephemeral=False)
+
+                        else:
+                            await ctx.followup.send(f"{character_ability_res[1]["fail"]}", ephemeral=False)
+
+
+        else:
+            await ctx.response.send_message("You don't have a RP character currently.", ephemeral=True)
+
+    
     
     # Roll a dice (DnD style)
     # -------------------------------------
