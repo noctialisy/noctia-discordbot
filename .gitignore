@@ -54,3 +54,5 @@ old.*
 *.pickle
 settings.json
 k8s_noctiabot.yaml
+game_saves/*
+game_db/main.db
