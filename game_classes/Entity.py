@@ -251,7 +251,8 @@ class Entity:
     def set_value(self, key, value):
         if key == "inventory":
             new_inventory = Inventory()
-            self.inventory = new_inventory.port(value)
+            new_inventory.port(value)
+            self.inventory = new_inventory
 
         else:
             setattr(self, key, value)
