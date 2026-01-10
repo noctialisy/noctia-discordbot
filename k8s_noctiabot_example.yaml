@@ -28,6 +28,9 @@ spec:
         volumeMounts:
           - name: noctia-discordbot-source
             mountPath: /usr/src/app/
+        env:
+          - name: PYTHONUNBUFFERED
+            value: "1"
 
       imagePullSecrets:
         - name: ${k8s.container.image.secret}
