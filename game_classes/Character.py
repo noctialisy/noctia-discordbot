@@ -93,6 +93,7 @@ class Character(Entity):
     def set_stat(self, stat_value: int, character_stat: str):
         if stat_value <= self.stat_point and character_stat in self.STATS:
             self.stats[character_stat] += stat_value
+            self.stat_point -= stat_value
 
     def set_raw_stat(self, raw_stat_index: int, character_stat: str, empty: bool):
         if empty:
