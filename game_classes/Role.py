@@ -10,7 +10,7 @@ class Role:
     # =========================================================
     # INIT
     # =========================================================
-    def __init__(self, role_name: str):
+    def __init__(self, role_name :str):
         if role_name in self.ROLES:
             self.role_name = role_name
             

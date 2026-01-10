@@ -1,4 +1,5 @@
 # Main entity class, it is the base for NPCs, Enemies and Characters
+import json
 
 from .Role import Role
 from .Inventory import Inventory
@@ -15,7 +16,7 @@ class Entity:
     # INIT
     # =========================================================
     def __init__(self):
-        self.type = ""
+        self.ent_type = ""
         self.name = ""
         self.surname = ""
         self.gender = ""
@@ -28,8 +29,8 @@ class Entity:
         self.description = ""
         self.backstory = ""
 
-        self.role = ""
-        self.level = 1
+        self.char_role = ""
+        self.char_level = 1
         self.role_level = 1
         self.mhp=0
         self.mmp=0
@@ -38,7 +39,7 @@ class Entity:
         self.mp=0
         self.sp=0
         self.ac=10
-        self.exp = 0
+        self.cur_exp = 0
         self.req_exp = 100
         self.raw_stats = []
         self.stat_point = 0
@@ -61,6 +62,42 @@ class Entity:
     # =========================================================
     # MAINS
     # =========================================================
+    def load(self, vars):
+        self.ent_type = vars["ent_type"]
+        self.name = vars['name']
+        self.surname = vars['surname']
+        self.gender = vars['gender']
+
+        if self.gender == "Female":
+            self.pronoun_self = "her"
+        else:
+            self.pronoun_self = "his"
+
+        self.race = vars['race']
+        self.height = vars['height']
+        self.weight = vars['weight']
+        self.nsfw = vars['nsfw']
+        self.description = vars['description']
+        self.backstory = vars['backstory']
+        self.char_role = Role(vars['char_role'])
+        self.char_level = vars['char_level']
+        self.role_level = vars['role_level']
+        self.mhp = vars['mhp']
+        self.mmp = vars['mmp']
+        self.msp = vars['msp']
+        self.hp = vars['hp']
+        self.mp = vars['mp']
+        self.sp = vars['sp']
+        self.ac = vars['ac']
+        self.cur_exp = vars['cur_exp']
+        self.req_exp = vars['req_exp']
+        self.raw_stats = json.loads(vars['raw_stats'])
+        self.stat_point = vars['stat_point']
+        self.stats = json.loads(vars['stats'])
+        self.skills = json.loads(vars['skills'])
+        self.abilities = json.loads(vars['abilities'])
+        self.inventory = Inventory(json.loads(vars['inventory']))
+    
     def describe(self):
         """
         Return the character's description
@@ -69,11 +106,11 @@ class Entity:
         character_description = [
             self.description + "\n\n" +
             "Your stats are as follow:\n\n" +
-            "Level: " + str(self.level) + "\n" +
+            "Level: " + str(self.char_level) + "\n" +
             "HP: " + str(self.hp) + "/" + str(self.mhp) + "\n" +
             "MP: " + str(self.mp) + "/" + str(self.mmp) + "\n" +
             "SP: " + str(self.sp) + "/" + str(self.msp) + "\n" +
-            "EXP: " + str(self.exp) + "/" + str(self.req_exp) + "\n\n" +
+            "EXP: " + str(self.cur_exp) + "/" + str(self.req_exp) + "\n\n" +
             str(self.stats)
 
         ]
@@ -81,24 +118,26 @@ class Entity:
         return character_description[0]
     
     def use_ability(self, ability_name, target):
-        return self.role.use_ability(self, self.mp, self.sp, ability_name, target)    
+        return self.char_role.use_ability(self, self.mp, self.sp, ability_name, target)    
 
     def check_level_up(self):
-        print("current exp: " + str(self.exp))
-        if self.exp >= self.req_exp:
-            if self.level < self.MAX_LEVEL:
+        if self.cur_exp >= self.req_exp:
+            if self.char_level < self.MAX_LEVEL:
                 self.level_up()
 
     def level_up(self):
-        self.level += 1
-        self.exp -= self.req_exp
+        self.char_level += 1
+        self.cur_exp -= self.req_exp
         self.stat_point += 3
         self.calc_stats()
 
     def calc_stats(self):
-        role_name = self.role.role_name
+        if type(self.char_role) == str:
+            self.char_role = Role(self.char_role)
+        
+        role_name = self.char_role.role_name
 
-        if self.level == 1:
+        if self.char_level == 1:
             
             if role_name == "Warrior":
                 self.mhp = 12
@@ -133,6 +172,8 @@ class Entity:
         dice = Dice(dice_type)
         return dice.roll(1)
 
+
+
     # =========================================================
     # GETS
     # =========================================================
@@ -140,15 +181,31 @@ class Entity:
         return self.name
     
     def get_level(self):
-        return self.level
+        return self.char_level
     
+    def get_role(self):
+        return self.char_role
+    
+    def get_inventory(self):
+        return self.inventory
+
     def get_stats(self):
         return self.stats
+    
+    def get_raw_stats(self):
+        return self.raw_stats
+    
+    def get_skills(self):
+        return self.skills
+    
+    def get_abilities(self):
+        return self.abilities
     
     def get_modifier(self, stat_name: str):
         if stat_name in self.STATS:
             # Modifier = (Ability Score - 10) / 2 (rounded down
             return round((self.stats[stat_name] - 10) / 2)
+
 
 
     # =========================================================
@@ -173,10 +230,10 @@ class Entity:
                     self.stats[character_stat] = self.raw_stats[raw_stat_index]
     
     def set_level(self, level: int):
-        self.level = level
+        self.char_level = level
 
     def set_exp(self, exp: int):
-        self.exp = exp
+        self.cur_exp = exp
 
     def set_req_exp(self, exp: int):
         self.req_exp = exp
@@ -188,5 +245,15 @@ class Entity:
         :param role: The role to assign to the character
         :type role: str
         """
-        self.role = Role(role)
-        self.description = f"You are {self.name} a {self.gender} {self.race} {self.role.role_name}"
+        self.char_role = Role(role)
+        self.description = f"You are {self.name} a {self.gender} {self.race} {self.char_role.role_name}"
+
+    def set_value(self, key, value):
+        if key == "inventory":
+            new_inventory = Inventory()
+            self.inventory = new_inventory.port(value)
+
+        else:
+            setattr(self, key, value)
+        
+        print(f"Set Character {key} to {value}")
