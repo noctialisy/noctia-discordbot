@@ -145,14 +145,14 @@ class Entity:
         if self.char_level == 1:
             
             if role_name == "Warrior":
-                self.mhp = 12
-                self.mmp = 6
-                self.msp = 20
+                self.mhp = 12 + self.get_modifier('constitution')
+                self.mmp = 6 + self.get_modifier('intelligence')
+                self.msp = 20 + self.get_modifier('dexterity')
 
             if role_name == "Mage":
-                self.mhp = 6
-                self.mmp = 20
-                self.msp = 12
+                self.mhp = 6 + self.get_modifier('constitution')
+                self.mmp = 20 + self.get_modifier('intelligence')
+                self.msp = 12 + self.get_modifier('dexterity')
 
         else:
 
