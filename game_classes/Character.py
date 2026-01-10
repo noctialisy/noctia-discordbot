@@ -63,7 +63,8 @@ class Character(Entity):
         :return: True if the character has unspent stats, otherwise False
         :rtype: bool
         """
-        if self.raw_stats != []:
+        
+        if len(self.raw_stats) > 0:
             return True
         
         if self.stat_point > 0:
