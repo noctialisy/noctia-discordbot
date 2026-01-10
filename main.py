@@ -168,7 +168,7 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
             while True:
                 msg = await bot.wait_for("message", check=lambda msg: msg.author == ctx.author and msg.channel.id == ctx.channel.id and msg.content.startswith("!"), timeout=15)
                 character_role = str(msg.content).replace("!", "")
-                
+
                 # Remove the message
                 await msg.delete()
 
@@ -177,7 +177,8 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
                 
                 GameSystem.save_character(user_id, character)
                 await ctx.followup.send(f"Your character has been created and saved!.", ephemeral=True)
-                return
+                break
+
     
 
 
@@ -242,6 +243,8 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
             character.set_raw_stat(4, fifth_stat, False)
             character.set_raw_stat(5, sixth_stat, False)
             character.set_raw_stat(0, "", True)
+
+            character.calc_stats()
 
             GameSystem.save_character(user_id, character)
             await ctx.response.send_message("RAW Stat composition assigned: " + str(character.get_stats()), ephemeral=True)
@@ -318,6 +321,29 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
             await ctx.response.send_message("You don't have a RP character currently.", ephemeral=False)
 
 
+    # Rest your character
+    # -------------------------------------
+    @bot.slash_command(
+        name="rp_rest",
+        description="Make your character rest and restore their stats. (Can also levelup)",
+        guild_ids=[discord_main_guild_id]
+    )
+    @option("silent", description="Doesn't print your character and only give you info about your stats (Default: False)")
+    async def rp_rest(ctx, silent=False):
+        user_id = ctx.author.id
+        character = GameSystem.load_character(user_id)
+
+        # Character existence check
+        if character != "Character not found or not loaded":
+            character.rest()
+            GameSystem.save_character(user_id, character)
+
+            await ctx.response.send_message("You find a comfortable and safe place close by and allow yourself a few moments of respite\n\n" +
+                                            "You wake up fully rested!", ephemeral=silent)
+
+        else:
+            await ctx.response.send_message("You don't have a RP character currently.", ephemeral=True)
+    
     
     # Cast and ability using your character
     # -------------------------------------

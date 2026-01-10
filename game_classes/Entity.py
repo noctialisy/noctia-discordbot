@@ -9,6 +9,7 @@ class Entity:
     RACES = ["Human", "Elf", "Catfolk", "Kitsune", "Lupine", "Orc"]
     GENDERS = ["Male", "Female"]
     STATS = ["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"]
+    MAX_LEVEL = 10
 
     # =========================================================
     # INIT
@@ -30,12 +31,15 @@ class Entity:
         self.role = ""
         self.level = 1
         self.role_level = 1
+        self.mhp=0
+        self.mmp=0
+        self.msp=0
         self.hp=0
         self.mp=0
         self.sp=0
         self.ac=10
         self.exp = 0
-        self.req_exp = 0
+        self.req_exp = 100
         self.raw_stats = []
         self.stat_point = 0
         self.stats = {
@@ -66,8 +70,10 @@ class Entity:
             self.description + "\n\n" +
             "Your stats are as follow:\n\n" +
             "Level: " + str(self.level) + "\n" +
-            "HP: " + str(self.hp) + "\n" +
-            "MP: " + str(self.mp) + "\n" +
+            "HP: " + str(self.hp) + "/" + str(self.mhp) + "\n" +
+            "MP: " + str(self.mp) + "/" + str(self.mmp) + "\n" +
+            "SP: " + str(self.sp) + "/" + str(self.msp) + "\n" +
+            "EXP: " + str(self.exp) + "/" + str(self.req_exp) + "\n\n" +
             str(self.stats)
 
         ]
@@ -78,13 +84,51 @@ class Entity:
         return self.role.use_ability(self, self.mp, self.sp, ability_name, target)    
 
     def check_level_up(self):
+        print("current exp: " + str(self.exp))
         if self.exp >= self.req_exp:
-            self.level += 1
-            self.exp -= self.req_exp
+            if self.level < self.MAX_LEVEL:
+                self.level_up()
 
+    def level_up(self):
+        self.level += 1
+        self.exp -= self.req_exp
+        self.stat_point += 3
+        self.calc_stats()
 
-            todo = "Levelup Logic"
+    def calc_stats(self):
+        role_name = self.role.role_name
 
+        if self.level == 1:
+            
+            if role_name == "Warrior":
+                self.mhp = 12
+                self.mmp = 6
+                self.msp = 20
+
+            if role_name == "Mage":
+                self.mhp = 6
+                self.mmp = 20
+                self.msp = 12
+
+        else:
+
+            if role_name == "Warrior":
+                self.mhp += self.roll_dice("d12")[0] + self.get_modifier('constitution')
+                self.mmp += self.roll_dice("d4")[0] + self.get_modifier('intelligence')
+                self.msp += self.roll_dice("d8")[0] + self.get_modifier('dexterity')
+
+            if role_name == "Mage":
+                self.mhp += self.roll_dice("d6")[0] + self.get_modifier('constitution')
+                self.mmp += self.roll_dice("d12")[0] + self.get_modifier('intelligence')
+                self.msp += self.roll_dice("d6")[0] + self.get_modifier('dexterity')
+
+    def rest(self):
+        self.check_level_up()
+
+        self.hp = self.mhp
+        self.mp = self.mmp
+        self.sp = self.msp
+    
     def roll_dice(self, dice_type):
         dice = Dice(dice_type)
         return dice.roll(1)
@@ -101,6 +145,11 @@ class Entity:
     def get_stats(self):
         return self.stats
     
+    def get_modifier(self, stat_name: str):
+        if stat_name in self.STATS:
+            # Modifier = (Ability Score - 10) / 2 (rounded down
+            return round((self.stats[stat_name] - 10) / 2)
+
 
     # =========================================================
     # SETS
@@ -123,6 +172,15 @@ class Entity:
                 if character_stat in self.CHARACTER_STATS:
                     self.stats[character_stat] = self.raw_stats[raw_stat_index]
     
+    def set_level(self, level: int):
+        self.level = level
+
+    def set_exp(self, exp: int):
+        self.exp = exp
+
+    def set_req_exp(self, exp: int):
+        self.req_exp = exp
+    
     def set_role(self, role: str):
         """
         Set the character's role (class)
@@ -131,3 +189,4 @@ class Entity:
         :type role: str
         """
         self.role = Role(role)
+        self.description = f"You are {self.name} a {self.gender} {self.race} {self.role.role_name}"

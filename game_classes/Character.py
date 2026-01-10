@@ -50,24 +50,6 @@ class Character(Entity):
 
         return "Creation: success!"
     
-    def describe(self):
-        """
-        Return the character's description
-        """
-
-        character_description = [
-            self.description + "\n\n" +
-            "Your stats are as follow:\n\n" +
-            "Level: " + str(self.level) + "\n" +
-            "HP: " + str(self.hp) + "\n" +
-            "SP: " + str(self.sp) + "\n" +
-            "MP: " + str(self.mp) + "\n" +
-            str(self.stats)
-
-        ]
-
-        return character_description[0]
-    
     def has_unspent_stats(self):
         """
         Docstring for has_unspent_stats
@@ -83,13 +65,6 @@ class Character(Entity):
         
         return False
     
-    def check_level_up(self):
-        if self.exp >= self.req_exp:
-            self.level += 1
-            self.exp -= self.req_exp
-
-
-            todo = "Levelup Logic"
 
     # =========================================================
     # GETS
@@ -122,15 +97,6 @@ class Character(Entity):
             if 0 <= raw_stat_index < len(self.raw_stats):
                 if character_stat in self.STATS:
                     self.stats[character_stat] = self.raw_stats[raw_stat_index]
-    
-    def set_role(self, role: str):
-        """
-        Set the character's role (class)
-        
-        :param role: The role to assign to the character
-        :type role: str
-        """
-        self.role = Role(role)
 
     
 
