@@ -40,7 +40,7 @@ class Entity:
         self.sp=0
         self.ac=10
         self.cur_exp = 0
-        self.req_exp = 100
+        self.req_exp = 300
         self.raw_stats = []
         self.stat_point = 0
         self.stats = {
@@ -121,14 +121,19 @@ class Entity:
         return self.char_role.use_ability(self, self.mp, self.sp, ability_name, target)    
 
     def check_level_up(self):
-        if self.cur_exp >= self.req_exp:
+        if self.cur_exp >= self.req_exp and self.cur_exp != 0:
             if self.char_level < self.MAX_LEVEL:
                 self.level_up()
 
     def level_up(self):
-        self.char_level += 1
         self.cur_exp -= self.req_exp
-        self.stat_point += 3
+
+        if self.cur_exp < 0:
+            self.cur_exp = 0
+
+        self.char_level += 1
+        self.req_exp += (self.req_exp * 2)
+        self.stat_point += 1
         self.calc_stats()
 
     def calc_stats(self):
