@@ -293,8 +293,8 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
         description="Check your RP Character status",
         guild_ids=[discord_main_guild_id]
     )
-    @option("silent", description="Doesn't print your character and only give you info about your stats (Default: True)")
-    async def check_character(ctx, silent=True):
+    @option("silent", description="Doesn't print your character and only give you info about your stats (Default: False)")
+    async def check_character(ctx, silent=False):
         user_id = ctx.author.id
         character = game_system.load_character(user_id)
         print(user_id)
