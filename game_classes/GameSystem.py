@@ -2,14 +2,47 @@ import os, base64, json, pickle, sqlite3
 from .Character import Character
 
 class GameSystem:
+    NO_RP_CHARACTER_ERROR = "You don't have a RP character currently."
+    NO_DB_DATA_ERROR = "No data found"
+    NO_CHARACTER_FOUND_ERROR = "Character not found or not loaded"
+    
     db_connection = ""
     db_cursor = ""
 
+    # =========================================================
+    # INIT
+    # =========================================================
     def __init__(self):
         self.db_connection = sqlite3.connect('./game_db/main.db')
         self.db_connection.row_factory = lambda cursor, row: {col[0] : row[i] for i,col in enumerate(cursor.description)}
         self.db_cursor = self.db_connection.cursor()
 
+    
+
+    # =========================================================
+    # Discord Section
+    # =========================================================
+    def get_discord_characters(self, uid = None):
+        query = "SELECT * FROM Entities;"
+        query_res = self.db_cursor.execute(query)
+
+        if query_res.fetchone() is None:
+            return self.NO_DB_DATA_ERROR
+        
+        else:
+            # Return the ability
+            result = query_res.fetchall()
+
+            if uid is None:
+                return result
+            else:
+                return map(lambda row: row[uid] == uid, result)
+    
+    
+
+    # =========================================================
+    # Character Section
+    # =========================================================
     def load_character(self, user_id: int):
         """
         Load the character from the database, can also check for existence
@@ -68,7 +101,7 @@ class GameSystem:
             except Exception as e:
                 print(f"There was an exception loading the character {user_id} from file: ")
                 print(e)
-                return "Character not found or not loaded"
+                return self.NO_CHARACTER_FOUND_ERROR
             
         else:
             query = "SELECT * from Entities WHERE uid = " + str(user_id)
@@ -146,7 +179,7 @@ class GameSystem:
 
         else:
             query_del = ("DELETE FROM `Entities` "
-                         "WHERE uid = :uid")
+                         "WHERE uid = :uid;")
             data = {
                 "uid": user_id
             }

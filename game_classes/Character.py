@@ -6,14 +6,19 @@ from .Dice import Dice
 
 class Character(Entity):
     
+    # =========================================================
+    # INIT
+    # =========================================================
     def __init__(self):
         super().__init__()
         self.ent_type = "Character"
         self.created = True
         self.stat_point = 0
 
+    
+    
     # =========================================================
-    # MAINS
+    # Main methods
     # =========================================================
     def create(self, name: str, surname: str, race: str, gender: str, nsfw: bool):
         """
@@ -33,7 +38,7 @@ class Character(Entity):
         :return: Creation result
         :rtype: str
         """
-        self.type = "Character"
+        self.ent_type = "Character"
         self.name = name
         self.surname = surname
 
@@ -73,8 +78,9 @@ class Character(Entity):
         return False
     
 
+    
     # =========================================================
-    # GETS
+    # Gets
     # =========================================================
     def get_stat_points(self):
         return self.stat_point
@@ -85,7 +91,7 @@ class Character(Entity):
 
 
     # =========================================================
-    # SETS
+    # Sets
     # =========================================================
     def set_raw_stats(self, raw_stats):
         self.raw_stats = raw_stats

@@ -1,81 +1,164 @@
 # Main class for handling character roles (Mage, Warrior, Paladin, Dancer, etc.)
-from .Roles.Warrior import Warrior
-from .Roles.Mage import Mage
+import sqlite3
 
 class Role:
-    ROLES = ["Warrior", "Mage", "Paladin"]
+    ROLES = []
     role_name = ""
-    role_class = Warrior()
+    role_hit_dice = ""
+    role_magic_dice = ""
+    role_special_dice = ""
+    role_abilities = []
+
+    NO_DB_DATA_ERROR = "No data found"
+
+    db_connection = ""
+    db_cursor = ""
 
     # =========================================================
     # INIT
     # =========================================================
     def __init__(self, role_name :str):
+        self.db_connection = sqlite3.connect('./game_db/main.db')
+        self.db_connection.row_factory = lambda cursor, row: {col[0] : row[i] for i,col in enumerate(cursor.description)}
+        self.db_cursor = self.db_connection.cursor()
+
+        self.ROLES = self.get_role_names()
+
+        if self.ROLES == self.NO_DB_DATA_ERROR:
+            self.ROLES = []
+
         if role_name in self.ROLES:
             self.role_name = role_name
-            
-            if self.role_name ==  "Warrior":
-                self.role_class = Warrior()
+            self.role_hit_dice = self.get_role_hit_dice(self.role_name)
+            self.role_magic_dice = self.get_role_magic_dice(self.role_name)
+            self.role_special_dice = self.get_role_special_dice(self.role_name)
+            self.role_abilities = self.get_role_abilities(self.role_name)
 
-            elif self.role_name ==  "Mage":
-                self.role_class = Mage()
-
+    
+    # =========================================================
+    # Main methods
+    # =========================================================
     def use_ability(self, entity, mp, sp, ability_name, trg_entity):
-        if ability_name in self.role_class.ABILITY_NAMES:
+        # Attempts to find the ability
+        ability = filter(lambda ability: ability['name'] == ability_name, self.role_abilities)
 
-            # Check Skill Level
-            if entity.get_level() >= self.role_class.ABILITY_TREE[ability_name]['reqs']['level']:
-                
-                # Check resources
-                if mp >= self.role_class.ABILITY_TREE[ability_name]['reqs']['mp']:
-                    if sp >= self.role_class.ABILITY_TREE[ability_name]['reqs']['sp']:
-                        ability_lines = self.role_class.ABILITY_TREE[ability_name]['usage_lines']
+        # Check if the ability was found
+        try:
+            test = min(ability)
+            ability = list(ability)[0]
 
-                        for key, value in ability_lines.items():
-                            ability_lines[key] = str(ability_lines[key]).replace('{main_weapon}', entity.inventory.equipment["main_weapon"])
-                            ability_lines[key] = str(ability_lines[key]).replace('{pronoun_self}', entity.pronoun_self)
-                            ability_lines[key] = str(ability_lines[key]).replace('{target_name}', trg_entity.name)
+        except ValueError:
+            return "You don't have that ability."
 
-                        # Cast the ability
-                        # Attack check
-                        trg_entity_ac = trg_entity.ac
-                        entity_roll = entity.roll_dice("d20")[0]
+        # Attempt to use the ability
+        # Check ability reqs
+        if entity.get_level() < ability['req_level']:
+            return "You don't have that ability."
+        
+        if mp < ability['req_mp']:
+            return "Lacks the required MP to use the ability."
+        
+        if sp < ability['req_sp']:
+            return "Lacks the required SP to use the ability."
+        
+        # Use ability
+        ability_lines = {
+            "cast": ability['usage_line_cast'],
+            "success": ability['usage_line_success'],
+            "fail": ability['usage_line_fail']
+        }
 
-                        if entity_roll > trg_entity_ac:
-                            # Calc dmg
-                            dmg = self.calculate_dmg(entity, trg_entity)
-                            ability_lines = self.role_class.ABILITY_TREE[ability_name]['usage_lines']
+        for key, value in ability_lines.items():
+            ability_lines[key] = str(ability_lines[key]).replace('{entity_name}', entity.name)
+            ability_lines[key] = str(ability_lines[key]).replace('{main_weapon}', entity.inventory.equipment["main_weapon"])
+            ability_lines[key] = str(ability_lines[key]).replace('{pronoun_self}', entity.pronoun_self)
+            ability_lines[key] = str(ability_lines[key]).replace('{target_name}', trg_entity.name)
 
-                            for key, value in ability_lines.items():
-                                ability_lines[key] = str(ability_lines[key]).replace('{dmg}', str(dmg))
-                                ability_lines[key] = str(ability_lines[key]).replace('{dmg_type}', str('physical'))
+        # Cast the ability
+        # Attack check
+        trg_entity_ac = trg_entity.ac
+        entity_roll = entity.roll_dice("d20")[0]
 
-                            return ["success", ability_lines]
-                        
-                        else:
-                            return ["fail", ability_lines]
-                    
-                    else:
-                        return "Lacks the required SP to use the ability"
-                    
-                else:
-                    return "Lacks the required MP to use the ability"
+        if entity_roll > trg_entity_ac:
+            # Calc dmg
+            dmg = self.calculate_dmg(entity, trg_entity)
+            #ability_lines = self.role_class.ABILITY_TREE[ability_name]['usage_lines']
 
+            for key, value in ability_lines.items():
+                ability_lines[key] = str(ability_lines[key]).replace('{dmg}', str(dmg))
+                ability_lines[key] = str(ability_lines[key]).replace('{dmg_type}', str('physical'))
 
-            else:
-                return "Your Character can't use that ability."
-
-
+            return ["success", ability_lines]
+        
         else:
-            return "Your Character can't use that ability."
-            
-
-        self.role_class.use_ability(ability_name)
-        pass
+            return ["fail", ability_lines]
 
     def calculate_dmg(self, entity, trg_entity):
         dmg = entity.roll_dice("d10")
         return dmg
+    
 
+    
+    # =========================================================
+    # Gets
+    # =========================================================
+    def get_role_names(self):
+        query = "SELECT name FROM Roles;"
+        query_res = self.db_cursor.execute(query)
+        result = query_res.fetchall()
 
+        if result == []:
+            return self.NO_DB_DATA_ERROR
+        
+        else:
+            # Return the roles
+            return list(map(lambda row: row['name'], result))
 
+    def get_role_hit_dice(self, role_name):
+        query = "SELECT hit_dice FROM Roles WHERE name = :name;"
+        data = {"name": role_name}
+        query_res = self.db_cursor.execute(query, data)
+        result = query_res.fetchall()
+
+        if result == []:
+            return self.NO_DB_DATA_ERROR
+        
+        else:
+            return list(map(lambda row: row['hit_dice'], result))[0]
+        
+    def get_role_magic_dice(self, role_name):
+        query = "SELECT magic_dice FROM Roles WHERE name = :name;"
+        data = {"name": role_name}
+        query_res = self.db_cursor.execute(query, data)
+        result = query_res.fetchall()
+
+        if result == []:
+            return self.NO_DB_DATA_ERROR
+        
+        else:
+            return list(map(lambda row: row['magic_dice'], result))[0]
+        
+    def get_role_special_dice(self, role_name):
+        query = "SELECT special_dice FROM Roles WHERE name = :name;"
+        data = {"name": role_name}
+        query_res = self.db_cursor.execute(query, data)
+        result = query_res.fetchall()
+
+        if result == []:
+            return self.NO_DB_DATA_ERROR
+        
+        else:
+            return list(map(lambda row: row['special_dice'], result))[0]
+    
+    def get_role_abilities(self, role_name):
+        query = "SELECT * FROM Abilities WHERE role_name = :role_name AND role_name = \"Any\";"
+        data = {"role_name": role_name}
+        query_res = self.db_cursor.execute(query, data)
+        result = query_res.fetchall()
+
+        if result == []:
+            return self.NO_DB_DATA_ERROR
+        
+        else:
+            # Return the ability
+            return result

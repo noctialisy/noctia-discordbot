@@ -5,11 +5,11 @@ from .Role import Role
 from .Inventory import Inventory
 from .Dice import Dice
 
-
 class Entity:
     RACES = ["Human", "Elf", "Catfolk", "Kitsune", "Lupine", "Orc"]
     GENDERS = ["Male", "Female"]
     STATS = ["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"]
+    ROLES = ["Any", "Warrior", "Mage"]
     MAX_LEVEL = 10
 
     # =========================================================
@@ -29,7 +29,7 @@ class Entity:
         self.description = ""
         self.backstory = ""
 
-        self.char_role = ""
+        self.char_role = "Warrior"
         self.char_level = 1
         self.role_level = 1
         self.mhp=0
@@ -56,7 +56,7 @@ class Entity:
         self.abilities = []
 
         self.inventory = Inventory()
-
+    
     
     
     # =========================================================
@@ -140,38 +140,51 @@ class Entity:
         if type(self.char_role) == str:
             self.char_role = Role(self.char_role)
         
-        role_name = self.char_role.role_name
+        # Get specific dices for the Role
+        hit_dice = self.char_role.role_hit_dice
+        magic_dice = self.char_role.role_magic_dice
+        special_dice = self.char_role.role_special_dice
 
         if self.char_level == 1:
-            
-            if role_name == "Warrior":
-                self.mhp = 12 + self.get_modifier('constitution')
-                self.mmp = 6 + self.get_modifier('intelligence')
-                self.msp = 20 + self.get_modifier('dexterity')
-
-            if role_name == "Mage":
-                self.mhp = 6 + self.get_modifier('constitution')
-                self.mmp = 20 + self.get_modifier('intelligence')
-                self.msp = 12 + self.get_modifier('dexterity')
+            # At start, Max dice + modifier
+            self.mhp = int(hit_dice.split("d")[1]) + self.get_modifier('constitution')
+            self.mmp = int(magic_dice.split("d")[1]) + self.get_modifier('intelligence')
+            self.msp = int(special_dice.split("d")[1]) + self.get_modifier('dexterity')
 
         else:
-
-            if role_name == "Warrior":
-                self.mhp += self.roll_dice("d12")[0] + self.get_modifier('constitution')
-                self.mmp += self.roll_dice("d4")[0] + self.get_modifier('intelligence')
-                self.msp += self.roll_dice("d8")[0] + self.get_modifier('dexterity')
-
-            if role_name == "Mage":
-                self.mhp += self.roll_dice("d6")[0] + self.get_modifier('constitution')
-                self.mmp += self.roll_dice("d12")[0] + self.get_modifier('intelligence')
-                self.msp += self.roll_dice("d6")[0] + self.get_modifier('dexterity')
+            # Lv2+, dice_roll + modifier
+            self.mhp += self.roll_dice(hit_dice)[0] + self.get_modifier('constitution')
+            self.mmp += self.roll_dice(magic_dice)[0] + self.get_modifier('intelligence')
+            self.msp += self.roll_dice(special_dice)[0] + self.get_modifier('dexterity')
 
     def rest(self):
         self.check_level_up()
-
         self.hp = self.mhp
         self.mp = self.mmp
         self.sp = self.msp
+    
+    def drop_items(self):
+        # Add drops mechanics
+        pass
+    
+    def roll_stats(self):
+        dice = Dice("d6")
+        roll = 0
+        results = []
+        result_values = []
+
+        while roll < 6:
+            rolled = dice.roll(4)
+            result = sum(sorted(rolled)[-3:])
+            results.append(str(rolled) + "(" + str(result) + ")")
+            result_values.append(result)
+
+            roll += 1
+
+        result_values.sort(reverse=True)
+        self.set_raw_stats(result_values)
+
+        return results
     
     def roll_dice(self, dice_type):
         dice = Dice(dice_type)
