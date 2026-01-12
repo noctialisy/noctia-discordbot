@@ -108,8 +108,6 @@ class Entity:
             "Your stats are as follow:\n\n" +
             "Level: " + str(self.char_level) + "\n" +
             "HP: " + str(self.hp) + "/" + str(self.mhp) + "\n" +
-            "MP: " + str(self.mp) + "/" + str(self.mmp) + "\n" +
-            "SP: " + str(self.sp) + "/" + str(self.msp) + "\n" +
             "EXP: " + str(self.cur_exp) + "/" + str(self.req_exp) + "\n\n" +
             str(self.stats)
 
@@ -167,7 +165,7 @@ class Entity:
         # Add drops mechanics
         pass
     
-    def roll_stats(self):
+    def roll_stats(self, result_type='text'):
         dice = Dice("d6")
         roll = 0
         results = []
@@ -184,7 +182,10 @@ class Entity:
         result_values.sort(reverse=True)
         self.set_raw_stats(result_values)
 
-        return results
+        if result_type == 'text':
+            return results
+        else:
+            return result_values
     
     def roll_dice(self, dice_type):
         dice = Dice(dice_type)
@@ -244,7 +245,7 @@ class Entity:
             self.raw_stats.sort(reverse=True)
 
             if 0 <= raw_stat_index < len(self.raw_stats):
-                if character_stat in self.CHARACTER_STATS:
+                if character_stat in self.STATS:
                     self.stats[character_stat] = self.raw_stats[raw_stat_index]
     
     def set_level(self, level: int):
@@ -263,8 +264,14 @@ class Entity:
         :param role: The role to assign to the character
         :type role: str
         """
-        self.char_role = Role(role)
-        self.description = f"You are {self.name} a {self.gender} {self.race} {self.char_role.role_name}"
+        try:
+            self.char_role = Role(role)
+            self.description = f"You are {self.name} a {self.gender} {self.race} {self.char_role.role_name}"
+
+        except Exception as e:
+            return "Role assign failed " + str(e)
+        
+        return True
 
     def set_value(self, key, value):
         if key == "inventory":

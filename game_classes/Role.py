@@ -39,15 +39,22 @@ class Role:
     # Main methods
     # =========================================================
     def use_ability(self, entity, mp, sp, ability_name, trg_entity):
+        #print(ability_name)
+        #print(self.role_abilities)
+        
+        ability = ''
+
+        if type(self.role_abilities) is str:
+            return "No abilities"
+        
         # Attempts to find the ability
-        ability = filter(lambda ability: ability['name'] == ability_name, self.role_abilities)
+        for item in self.role_abilities:
+            if item['name'] == ability_name:
+                ability = item
+                break
 
         # Check if the ability was found
-        try:
-            test = min(ability)
-            ability = list(ability)[0]
-
-        except ValueError:
+        if ability == "":
             return "You don't have that ability."
 
         # Attempt to use the ability
@@ -112,7 +119,8 @@ class Role:
         
         else:
             # Return the roles
-            return list(map(lambda row: row['name'], result))
+            data = map(lambda row: row['name'], result)
+            return list(data)
 
     def get_role_hit_dice(self, role_name):
         query = "SELECT hit_dice FROM Roles WHERE name = :name;"
@@ -124,7 +132,8 @@ class Role:
             return self.NO_DB_DATA_ERROR
         
         else:
-            return list(map(lambda row: row['hit_dice'], result))[0]
+            data = map(lambda row: row['hit_dice'], result)
+            return list(data)[0]
         
     def get_role_magic_dice(self, role_name):
         query = "SELECT magic_dice FROM Roles WHERE name = :name;"
@@ -136,7 +145,8 @@ class Role:
             return self.NO_DB_DATA_ERROR
         
         else:
-            return list(map(lambda row: row['magic_dice'], result))[0]
+            data = map(lambda row: row['magic_dice'], result)
+            return list(data)[0]
         
     def get_role_special_dice(self, role_name):
         query = "SELECT special_dice FROM Roles WHERE name = :name;"
@@ -148,11 +158,12 @@ class Role:
             return self.NO_DB_DATA_ERROR
         
         else:
-            return list(map(lambda row: row['special_dice'], result))[0]
+            data = map(lambda row: row['special_dice'], result)
+            return list(data)[0]
     
     def get_role_abilities(self, role_name):
-        query = "SELECT * FROM Abilities WHERE role_name = :role_name AND role_name = \"Any\";"
-        data = {"role_name": role_name}
+        query = "SELECT * FROM Abilities WHERE role_name = :role_name OR role_name = :any_role;"
+        data = {"role_name": role_name, "any_role": "Any"}
         query_res = self.db_cursor.execute(query, data)
         result = query_res.fetchall()
 
@@ -160,5 +171,5 @@ class Role:
             return self.NO_DB_DATA_ERROR
         
         else:
-            # Return the ability
+            # Return the ability list
             return result

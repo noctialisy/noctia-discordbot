@@ -29,16 +29,16 @@ class Enemy(Entity):
 
         # Fills the blanks
         if race is None:
-            race = random.randint(0, len(self.RACES))
+            race = random.randint(0, len(self.RACES) - 1)
             race = self.RACES[race]
 
         if gender is None:
-            gender = random.randint(0, len(self.GENDERS))
-            gender = self.RACES[gender]
+            gender = random.randint(0, len(self.GENDERS) - 1)
+            gender = self.GENDERS[gender]
 
         if role is None:
-            role = random.randint(0, len(self.ROLES))
-            role = self.RACES[role]
+            role = random.randint(0, len(self.ROLES) - 1)
+            role = self.ROLES[role]
 
         # Check inputs
         if race not in self.RACES:
@@ -61,7 +61,7 @@ class Enemy(Entity):
         else:
             self.pronoun_self = "his"
 
-        rolled_stats = self.roll_stats()
+        rolled_stats = self.roll_stats('stats')
         
         # Decide tag
         rolled_stats_sum = sum(rolled_stats)
@@ -74,7 +74,7 @@ class Enemy(Entity):
             self.tag = "Legendary"
 
         self.description = f"{race} {role} [{self.tag}]"
-        sample = random.sample(range(0, 5), 6)
+        sample = random.sample([0, 1, 2, 3, 4, 5], 6)
 
         # ToDo: This would have to be improved by Race / Job
         self.set_raw_stat(sample[0], "strength", False)
@@ -84,6 +84,8 @@ class Enemy(Entity):
         self.set_raw_stat(sample[4], "intelligence", False)
         self.set_raw_stat(sample[5], "charisma", False)
         self.set_raw_stat(0, "", True)
+
+        self.calc_stats()
     
     def test(self):
         pass

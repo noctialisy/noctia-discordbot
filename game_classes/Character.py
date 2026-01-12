@@ -89,7 +89,6 @@ class Character(Entity):
         return self.raw_stats
     
 
-
     # =========================================================
     # Sets
     # =========================================================
@@ -100,17 +99,3 @@ class Character(Entity):
         if stat_value <= self.stat_point and character_stat in self.STATS:
             self.stats[character_stat] += stat_value
             self.stat_point -= stat_value
-
-    def set_raw_stat(self, raw_stat_index: int, character_stat: str, empty: bool):
-        if empty:
-            self.raw_stats = []
-
-        else:
-            self.raw_stats.sort(reverse=True)
-
-            if 0 <= raw_stat_index < len(self.raw_stats):
-                if character_stat in self.STATS:
-                    self.stats[character_stat] = self.raw_stats[raw_stat_index]
-
-    
-

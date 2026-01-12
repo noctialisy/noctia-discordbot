@@ -12,13 +12,16 @@ class GameSystem:
     # =========================================================
     # INIT
     # =========================================================
-    def __init__(self):
-        self.db_connection = sqlite3.connect('./game_db/main.db')
+    def __init__(self, db_name=None):
+        if db_name is None:
+            db_name = './game_db/main.db'
+
+        self.db_connection = sqlite3.connect(db_name)
         self.db_connection.row_factory = lambda cursor, row: {col[0] : row[i] for i,col in enumerate(cursor.description)}
         self.db_cursor = self.db_connection.cursor()
 
-    
 
+    
     # =========================================================
     # Discord Section
     # =========================================================
@@ -127,7 +130,7 @@ class GameSystem:
                 pickle.dump(character, file)
 
         else:
-            print(f"Saving character {user_id}...")
+            #print(f"Saving character {user_id}...")
             # Search for the character in the db
             query = "SELECT id from Entities WHERE uid = " + str(user_id)
             query_res = self.db_cursor.execute(query)
@@ -151,16 +154,23 @@ class GameSystem:
                             "WHERE uid = :uid;")
                 
             data = vars(character)
-            data["uid"] = user_id
-            data['char_role'] = character.get_role().role_name
-            data['raw_stats'] = json.dumps(character.get_raw_stats())
-            data['stats'] = json.dumps(character.get_stats())
-            data['skills'] = json.dumps(character.get_skills())
-            data['abilities'] = json.dumps(character.get_abilities())
-            data['inventory'] = json.dumps(vars(character.get_inventory()))
-            print(data)
+            
+            # Must transform the data because vars() returns a pointer to the class values
+            save_data = {}
 
-            self.db_cursor.execute(query, data)
+            for key in data.keys():
+                attr_value = getattr(character, key)
+                save_data[key] = attr_value
+
+            save_data["uid"] = user_id
+            save_data['char_role'] = character.get_role().role_name
+            save_data['raw_stats'] = json.dumps(character.get_raw_stats())
+            save_data['stats'] = json.dumps(character.get_stats())
+            save_data['skills'] = json.dumps(character.get_skills())
+            save_data['abilities'] = json.dumps(character.get_abilities())
+            save_data['inventory'] = json.dumps(vars(character.get_inventory()))
+
+            self.db_cursor.execute(query, save_data)
             self.db_connection.commit()
 
     def delete_character(self, user_id: int):

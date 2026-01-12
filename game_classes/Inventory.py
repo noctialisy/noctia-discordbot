@@ -1,4 +1,5 @@
 # Class to handle inventories
+import json
 
 class Inventory:
     max_slots = 20
@@ -26,6 +27,13 @@ class Inventory:
                 self.items = vars['items']
                 self.equipment = vars['equipment']
 
+    def print(self):
+        return json.dumps({
+            "max_slots": self.max_slots,
+            "items": self.items,
+            "equipment": self.equipment
+        })
+    
     def port(self, inventory):
         self.max_slots = inventory.max_slots
         self.items = inventory.items
