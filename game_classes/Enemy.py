@@ -38,6 +38,10 @@ class Enemy(Entity):
 
         if role is None:
             role = random.randint(0, len(self.ROLES) - 1)
+            
+            if role == 'Any':
+                role = 'Warrior'
+
             role = self.ROLES[role]
 
         # Check inputs
