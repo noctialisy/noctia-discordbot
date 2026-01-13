@@ -280,11 +280,17 @@ class Entity(GameSystem):
             self.mmp = int(magic_dice.split("d")[1]) + self.get_modifier('intelligence')
             self.msp = int(special_dice.split("d")[1]) + self.get_modifier('dexterity')
 
+            # Calculate base AC
+            self.ac = 10 + self.get_modifier('constitution')
+
         else:
             # Lv2+, dice_roll + modifier
             self.mhp += self.roll_dice(hit_dice)[0] + self.get_modifier('constitution')
             self.mmp += self.roll_dice(magic_dice)[0] + self.get_modifier('intelligence')
             self.msp += self.roll_dice(special_dice)[0] + self.get_modifier('dexterity')
+
+            # Calculate base AC
+            self.ac = 10 + self.get_modifier('constitution')
 
     def rest(self):
         self.check_level_up()
