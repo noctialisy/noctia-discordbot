@@ -355,8 +355,15 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
             character.rest()
             character.save_character(user_id, character)
 
-            await ctx.response.send_message("You find a comfortable and safe place close by and allow yourself a few moments of respite\n\n" +
-                                            "You wake up fully rested!", ephemeral=silent)
+            if character.pronoun_self == 'her':
+                pron = 'she'
+                poss_pron = 'herself'
+            else:
+                pron = 'he'
+                poss_pron = 'himself'
+
+            await ctx.response.send_message(f"*{character.name} finds a comfortable and safe place close by and allows {poss_pron} a good rest*\n" +
+                                            f"  - {character.name} recovers as {pron} sleeps~", ephemeral=silent)
 
         else:
             await ctx.response.send_message(character.NO_RP_CHARACTER_ERROR, ephemeral=True)
@@ -443,6 +450,8 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
             for db_enemy in db_enemies:
                 if enemy_id < int(db_enemy['uid']):
                     enemy_id = int(db_enemy['uid'])
+
+        enemy_id += 1
         
 
         enemy = enemy.create('Amelia', None, 'Female')
