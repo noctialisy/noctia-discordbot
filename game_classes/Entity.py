@@ -304,7 +304,7 @@ class Entity(GameSystem):
         else:
             self.hp = 0
 
-        self.save_character(self, self.entity_id)
+        self.save_character(self.entity_id)
 
     def apply_heal(self, heal_amt):
         total_hp_after_heal = self.hp + heal_amt
@@ -314,7 +314,7 @@ class Entity(GameSystem):
         else:
             self.hp = total_hp_after_heal
 
-        self.save_character(self, self.entity_id) 
+        self.save_character(self.entity_id) 
     
     def drop_items(self):
         # Add drops mechanics
