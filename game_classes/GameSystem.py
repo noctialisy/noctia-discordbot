@@ -35,18 +35,16 @@ class GameSystem:
     # =========================================================
     # Discord Section
     # =========================================================
-    def get_user_entities(self, uid = None):
-        query = "SELECT * FROM Entities;"
+    def get_entities(self, ent_type = 'Character', uid = None):
+        if type(ent_type) is not str or ent_type not in ['Character', 'Enemy']:
+             ent_type = 'Character'
+
+        query = f"SELECT * FROM Entities WHERE ent_type = '{ent_type}';"
+
+        if type(uid) is str:
+                query = f"SELECT * FROM Entities WHERE ent_type = '{ent_type}' AND uid = '{uid}';"
+
         self.db_cursor.execute(query)
         result = self.db_cursor.fetchall()
 
-        if result == []:
-            return self.NO_DB_DATA_ERROR
-        
-        else:
-
-            if uid is None:
-                return result
-            
-            else:
-                return map(lambda row: row['uid'] == uid, result)
+        return result

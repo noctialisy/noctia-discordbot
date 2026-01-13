@@ -7,6 +7,7 @@ from discord.commands import option
 
 # Game imports
 # -------------------------------------
+from game_classes.Enemy import Enemy
 from game_classes.Character import Character
 from game_classes.Dice import Dice
 
@@ -284,11 +285,16 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
         description="Check your RP Character status",
         guild_ids=[discord_main_guild_id]
     )
+    @option("entity_id", description="Get info for the specified entity id")
     @option("silent", description="Doesn't print your character and only give you info about your stats (Default: False)")
-    async def check_character(ctx, silent=False):
+    async def check_character(ctx, entity_id=None, silent=False):
         user_id = ctx.author.id
+
+        if entity_id is None:
+            entity_id = user_id
+
         character = Character()
-        character = character.load_character(character, user_id)
+        character = character.load_character(character, entity_id)
 
         if type(character) is not str:
             #user_avatar = ctx.author.avatar
@@ -312,7 +318,7 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
 
             await ctx.response.send_message("Here's your character card!", embed=embed, ephemeral=silent)
 
-            if character.has_unspent_stats() == True:
+            if entity_id == user_id and character.has_unspent_stats() == True:
                 stat_points = character.get_stat_points()
                 raw_stat_points = character.get_raw_stats()
                 raw_stat_explain_string = ""
@@ -366,7 +372,7 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
     )
     @option("ability_name", description="The action you want to perform (Most basic is \"Attack\")")
     @option("target", description="The target of the action (Optional - Depends on action)")
-    async def rp_action(ctx, ability_name: str, target = None):
+    async def rp_action(ctx, ability_name: str, target):
         user_id = ctx.author.id
         character = Character()
         character = character.load_character(character, user_id)
@@ -374,42 +380,93 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
         if character != character.NO_CHARACTER_FOUND_ERROR:
             target = str(target).replace("@", "").replace("<", "").replace(">", "")
 
-            is_user = False
-            get_user_entities = character.get_user_entities(user_id)
+            get_user_entities = character.get_entities('Character', target)
+            get_enemy_entities = character.get_entities('Enemy', target)
 
-            if get_user_entities != character.NO_DB_DATA_ERROR:
-                is_user = True
-
-            if is_user:
+            if get_user_entities != []:
                 target_character = Character()
-                target_character = character.load_character(target_character, target)
-                character_ability_res = character.use_ability(ability_name, [target_character])
 
-                if type(character_ability_res) == str:
-                    await ctx.response.send_message(f"{character.name} {character_ability_res}", ephemeral=False)
+            if get_enemy_entities != []:
+                target_character = Enemy()
 
-                else:
-                    action_result = f"*{character_ability_res[0][1]["cast"]}!*\n"
+            # Find the enemy
+            target_character = target_character.load_character(target_character, target)
+            character_ability_res = character.use_ability(ability_name, [target_character])
 
-                    # For each target in the skill result
-                    for ability_result in character_ability_res:
-                        result = ability_result[0][1]
-                        lines = ability_result[1]
+            if type(character_ability_res) == str:
+                await ctx.response.send_message(f"{character.name} {character_ability_res}", ephemeral=False)
 
-                        if result == "success":
-                            action_result = action_result + "  - " + lines["success"] + "\n"
+            else:
+                action_result = f"*{character_ability_res[0][1]["cast"]}!*\n"
 
-                        else:
-                            action_result = action_result + "  - " + lines["fail"] + "\n"
+                # For each target in the skill result
+                for ability_result in character_ability_res:
+                    target_name = ability_result[0][0]
+                    result = ability_result[0][1]
+                    lines = ability_result[1]
 
-                    # Print the action results
-                    await ctx.response.send_message(f"{action_result}", ephemeral=False)
+                    if result == "success":
+                        action_result = action_result + "  - " + lines["success"] + "\n"
 
+                    elif result == "fail":
+                        action_result = action_result + "  - " + lines["fail"] + "\n"
+                    
+                    else:
+                        action_result = action_result + "  - " + target_name + " Cannot continue to fight...\n"
+
+                # Print the action results
+                await ctx.response.send_message(f"{action_result}", ephemeral=False)
 
         else:
             await ctx.response.send_message(character.NO_RP_CHARACTER_ERROR, ephemeral=True)
-
     
+    
+
+    # Spawn a random enemy
+    # -------------------------------------
+    @bot.slash_command(
+        name="rp_enemy_spawn",
+        description="Spawns a random enemy",
+        guild_ids=[discord_main_guild_id]
+    )
+    async def rp_enemy_spawn(ctx):
+        user_id = ctx.author.id
+
+        # Create a new enemy
+        enemy_id = 0
+        enemy = Enemy()
+
+        # Find a new id
+        db_enemies = enemy.get_entities('Enemy')
+
+        if db_enemies != []:
+            for db_enemy in db_enemies:
+                if enemy_id < int(db_enemy['uid']):
+                    enemy_id = int(db_enemy['uid'])
+        
+
+        enemy = enemy.create('Amelia', None, 'Female')
+        enemy.rest()
+        enemy.save_character(enemy_id)
+        embed = discord.Embed(
+            title=enemy.name + " id: " + str(enemy.entity_id),
+            description=enemy.description,
+            color=discord.Color.blurple()
+        )
+        embed.add_field(name="Main Stats", value="")
+        embed.add_field(name="HP", value=str(enemy.hp) + "/" + str(enemy.mhp), inline=True)
+        embed.add_field(name="AC", value=str(enemy.ac), inline=True)
+        embed.add_field(name="Strength", value=enemy.stats['strength'], inline=True)
+        embed.add_field(name="Dexterity", value=enemy.stats['dexterity'], inline=True)
+        embed.add_field(name="Constitution", value=enemy.stats['constitution'], inline=True)
+        embed.add_field(name="Intelligence", value=enemy.stats['intelligence'], inline=True)
+        embed.add_field(name="Wisdom", value=enemy.stats['wisdom'], inline=True)
+        embed.add_field(name="Charisma", value=enemy.stats['charisma'], inline=True)
+        embed.add_field(name="Backstory", value="Is empty in here for now...")
+        embed.set_author(name="RP Char card")
+
+        await ctx.response.send_message("Here's your new generated enemy!\nUse the enemy_id when using action to target this enemy.", embed=embed, ephemeral=False)
+
     
     # Roll a dice (DnD style)
     # -------------------------------------

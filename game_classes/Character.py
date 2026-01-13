@@ -13,7 +13,6 @@ class Character(Entity):
     # =========================================================
     def __init__(self):
         super().__init__()
-        #print("Init Character")
         self.ent_type = "Character"
         self.created = True
         self.stat_point = 0

@@ -13,6 +13,7 @@ class Entity(GameSystem):
     ROLES = ["Any", "Warrior", "Mage"]
     MAX_LEVEL = 10
 
+
     # =========================================================
     # INIT
     # =========================================================
@@ -60,6 +61,8 @@ class Entity(GameSystem):
         self.abilities = []
 
         self.inventory = Inventory()
+
+        self.combat_ready = 1
     
     
     
@@ -102,6 +105,7 @@ class Entity(GameSystem):
         self.skills = json.loads(vars['skills'])
         self.abilities = json.loads(vars['abilities'])
         self.inventory = Inventory(json.loads(vars['inventory']))
+        self.combat_ready = vars['combat_ready']
     
     def load_character(self, entity, user_id: int):
         """
@@ -180,11 +184,11 @@ class Entity(GameSystem):
             if query_res == []:
                 # No char found in DB, Insert
                 query = ("INSERT INTO `Entities` "
-                            "(uid, ent_type, name, surname, gender, race, height, weight, nsfw, description, backstory, char_role, char_level, role_level, mhp, mmp, msp, hp, mp, sp, ac, cur_exp, req_exp, raw_stats, stat_point, stats, skills, abilities, inventory) "
+                            "(uid, ent_type, name, surname, gender, race, height, weight, nsfw, description, backstory, char_role, char_level, role_level, mhp, mmp, msp, hp, mp, sp, ac, cur_exp, req_exp, raw_stats, stat_point, stats, skills, abilities, inventory, combat_ready) "
                             f"VALUES(\"{save_data['uid']}\", \"{save_data['ent_type']}\", \"{save_data['name']}\", \"{save_data['surname']}\", \"{save_data['gender']}\", \"{save_data['race']}\", {int(save_data['height'])}, {int(save_data['weight'])}, "
                             f"{int(save_data['nsfw'])}, \"{save_data['description']}\", \"{save_data['backstory']}\", \"{save_data['char_role']}\", {save_data['char_level']}, "
                             f"{save_data['role_level']}, {save_data['mhp']}, {save_data['mmp']}, {save_data['msp']}, {save_data['hp']}, {save_data['mp']}, {save_data['sp']}, {save_data['ac']}, "
-                            f"{save_data['cur_exp']}, {save_data['req_exp']}, '{save_data['raw_stats']}', {save_data['stat_point']}, '{save_data['stats']}', '{save_data['skills']}', '{save_data['abilities']}', '{save_data['inventory']}');")
+                            f"{save_data['cur_exp']}, {save_data['req_exp']}, '{save_data['raw_stats']}', {save_data['stat_point']}, '{save_data['stats']}', '{save_data['skills']}', '{save_data['abilities']}', '{save_data['inventory']}', {save_data['combat_ready']});")
 
             else:
                 # Char exists, Update
@@ -195,7 +199,7 @@ class Entity(GameSystem):
                             f"mhp = {save_data['mhp']}, mmp = {save_data['mmp']}, msp = {save_data['msp']}, hp = {save_data['hp']}, mp = {save_data['mp']}, sp = {save_data['sp']}, ac = {save_data['ac']}, "
                             f"cur_exp = {save_data['cur_exp']}, req_exp = {save_data['req_exp']}, "
                             f"raw_stats = '{save_data['raw_stats']}', stat_point = {save_data['stat_point']}, stats = '{save_data['stats']}', "
-                            f"skills = '{save_data['skills']}', abilities = '{save_data['abilities']}', inventory = '{save_data['inventory']}' "
+                            f"skills = '{save_data['skills']}', abilities = '{save_data['abilities']}', inventory = '{save_data['inventory']}', combat_ready = {save_data['combat_ready']} "
                             f"WHERE uid = \"{save_data['uid']}\";")
             
 
@@ -299,12 +303,29 @@ class Entity(GameSystem):
         self.sp = self.msp
     
     def apply_dmg(self, dmg_amt):
+        drops = {}
+
         if self.hp >= dmg_amt:
             self.hp = self.hp - dmg_amt
         else:
             self.hp = 0
 
-        self.save_character(self.entity_id)
+        # Calc drops
+        if self.hp == 0:
+            drops = self.drop_items()
+            self.combat_ready = 0
+
+            if self.ent_type == "Character":
+                self.save_character(self.entity_id)
+
+            if self.ent_type == "Enemy":
+                self.delete_character(self.entity_id)
+        
+        else:
+            self.save_character(self.entity_id)
+
+
+        return drops
 
     def apply_heal(self, heal_amt):
         total_hp_after_heal = self.hp + heal_amt
@@ -314,11 +335,49 @@ class Entity(GameSystem):
         else:
             self.hp = total_hp_after_heal
 
-        self.save_character(self.entity_id) 
+        self.save_character(self.entity_id)
+
+    def revive(self):
+        if self.hp == 0:
+            self.hp = int(self.mhp * 0.20)
+            self.combat_ready = 1
     
     def drop_items(self):
-        # Add drops mechanics
-        pass
+        items = self.inventory.get_items()
+
+        drops = {}
+
+        if self.ent_type == "Enemy":
+            drops['exp'] = items['exp']
+            drops['gold'] = items['gold']
+        
+        else:
+            roll_for_gold = self.roll_dice("d100")
+            roll_for_exp = self.roll_dice("d100")
+
+            # These would need to be checked for actual drop chances in DB
+            if roll_for_exp[0] <= 10:
+                drops['exp'] = items['exp']
+
+            if roll_for_gold[0] <= 20:
+                drops['gold'] = items['gold']
+
+        return drops
+
+    def loot_items(self, items: dict):
+        if type(items) is not dict:
+            items = {}
+
+        for key, item in items.items():
+            if key == "exp":
+                self.set_exp(int(item))
+
+            elif key == "gold":
+                self.inventory.items["gold"] += item
+            else:
+                self.inventory.items['pouch'].append(item)
+        
+        self.save_character(self.entity_id)
     
     def roll_stats(self, result_type='text'):
         dice = Dice("d6")
@@ -398,8 +457,11 @@ class Entity(GameSystem):
             # Modifier = (Ability Score - 10) / 2 (rounded down
             return round((self.stats[stat_name] - 10) / 2)
 
+    def get_combat_ready(self):
+        return self.combat_ready
+    
 
-
+    
     # =========================================================
     # SETS
     # =========================================================

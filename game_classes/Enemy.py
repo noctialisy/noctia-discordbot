@@ -89,6 +89,8 @@ class Enemy(Entity):
         self.set_raw_stat(0, "", True)
 
         self.calc_stats()
+
+        return self
     
     def test(self):
         pass

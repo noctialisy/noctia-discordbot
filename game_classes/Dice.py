@@ -5,7 +5,7 @@ import random
 class Dice:
     dice_type = ""
     dice_value = 0
-    dice_types = ["d4", "d6", "d8", "d10", "d12", "d20"]
+    dice_types = ["d4", "d6", "d8", "d10", "d12", "d20", "d100"]
 
     def __init__(self, dice_type):
         if dice_type in self.dice_types:

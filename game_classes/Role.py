@@ -83,7 +83,7 @@ class Role(GameSystem):
 
         for key, value in ability_lines.items():
             ability_lines[key] = str(ability_lines[key]).replace('{entity_name}', entity.name)
-            ability_lines[key] = str(ability_lines[key]).replace('{main_weapon}', entity.inventory.equipment["main_weapon"])
+            ability_lines[key] = str(ability_lines[key]).replace('{main_weapon}', entity.inventory.items['equipment']["main_weapon"])
             ability_lines[key] = str(ability_lines[key]).replace('{pronoun_self}', entity.pronoun_self)
 
         calc_results = []
@@ -134,10 +134,17 @@ class Role(GameSystem):
                 target_ac = target.ac
                 entity_roll = entity.roll_dice("d20")[0]
 
-                if entity_roll > target_ac:
+                if target.get_combat_ready() == 0:
+                    action_results.append([target.name, 'fail_dead', 0])
+
+                elif entity_roll > target_ac:
                     # Calc dmg
                     dmg = entity.roll_dice("d10")
-                    target.apply_dmg(dmg[0])
+                    drops = target.apply_dmg(dmg[0])
+
+                    if drops != {}:
+                        entity.loot_items(drops)
+
                     action_results.append([target.name, 'success', dmg])
                 
                 else:
