@@ -38,19 +38,19 @@ class GameSystem:
     # =========================================================
     def get_discord_characters(self, uid = None):
         query = "SELECT * FROM Entities;"
-        query_res = self.db_cursor.execute(query)
+        self.db_cursor.execute(query)
+        result = self.db_cursor.fetchall()
 
-        if query_res.fetchone() is None:
+        if result == []:
             return self.NO_DB_DATA_ERROR
         
         else:
-            # Return the ability
-            result = query_res.fetchall()
 
             if uid is None:
                 return result
+            
             else:
-                return map(lambda row: row[uid] == uid, result)
+                return map(lambda row: row['uid'] == uid, result)
     
     
 
