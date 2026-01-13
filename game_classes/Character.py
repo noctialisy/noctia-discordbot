@@ -1,3 +1,5 @@
+# Handle the characters
+
 from .Entity import Entity
 from .Role import Role
 from .Inventory import Inventory
@@ -11,6 +13,7 @@ class Character(Entity):
     # =========================================================
     def __init__(self):
         super().__init__()
+        #print("Init Character")
         self.ent_type = "Character"
         self.created = True
         self.stat_point = 0
@@ -61,41 +64,3 @@ class Character(Entity):
 
         return "Creation: success!"
     
-    def has_unspent_stats(self):
-        """
-        Docstring for has_unspent_stats
-        
-        :return: True if the character has unspent stats, otherwise False
-        :rtype: bool
-        """
-        
-        if len(self.raw_stats) > 0:
-            return True
-        
-        if self.stat_point > 0:
-            return True
-        
-        return False
-    
-
-    
-    # =========================================================
-    # Gets
-    # =========================================================
-    def get_stat_points(self):
-        return self.stat_point
-    
-    def get_raw_stats(self):
-        return self.raw_stats
-    
-
-    # =========================================================
-    # Sets
-    # =========================================================
-    def set_raw_stats(self, raw_stats):
-        self.raw_stats = raw_stats
-
-    def set_stat(self, stat_value: int, character_stat: str):
-        if stat_value <= self.stat_point and character_stat in self.STATS:
-            self.stats[character_stat] += stat_value
-            self.stat_point -= stat_value

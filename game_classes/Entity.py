@@ -1,11 +1,12 @@
 # Main entity class, it is the base for NPCs, Enemies and Characters
-import json, base64
+import os, json, pickle
 
+from .GameSystem import GameSystem
 from .Role import Role
 from .Inventory import Inventory
 from .Dice import Dice
 
-class Entity:
+class Entity(GameSystem):
     RACES = ["Human", "Elf", "Catfolk", "Kitsune", "Lupine", "Orc"]
     GENDERS = ["Male", "Female"]
     STATS = ["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"]
@@ -16,6 +17,9 @@ class Entity:
     # INIT
     # =========================================================
     def __init__(self):
+        super().__init__()
+        #print("Init Entity")
+        self.entity_id = ""
         self.ent_type = ""
         self.name = ""
         self.surname = ""
@@ -63,6 +67,7 @@ class Entity:
     # MAINS
     # =========================================================
     def load(self, vars):
+        self.entity_id = vars['uid']
         self.ent_type = vars["ent_type"]
         self.name = vars['name']
         self.surname = vars['surname']
@@ -98,6 +103,125 @@ class Entity:
         self.abilities = json.loads(vars['abilities'])
         self.inventory = Inventory(json.loads(vars['inventory']))
     
+    def load_character(self, entity, user_id: int):
+        """
+        Load the character from the database, can also check for existence
+        
+        :param user_id: Specify the user reference id for the character to load
+        :type user_id: int
+
+        :return: Character loaded if load ok, otherwise str
+        :rtype: Character
+        """
+
+        # Search for the character in the db
+        query = f"SELECT id from Entities WHERE uid = '{str(user_id)}';"
+        self.db_cursor.execute(query)
+        result = self.db_cursor.fetchall()
+
+        if result == []:
+            # No char found
+            # Try user file
+            return self.NO_CHARACTER_FOUND_ERROR
+            
+        else:
+            query = f"SELECT * from Entities WHERE uid = '{str(user_id)}';"
+            self.db_cursor.execute(query)
+            result = self.db_cursor.fetchall()
+
+            entity.load(result[0])
+
+            return entity
+
+    def save_character(self, user_id: int, save_method = "db"):
+        """
+        Save the character to the database
+        
+        :param user_id: Specify the user reference id for the character to save
+        :type user_id: int
+        :param character: The character to save
+        :type character: Character
+        """
+
+        if save_method == "file":
+            with open('./game_saves/character_'+str(user_id)+'.pickle', 'wb') as file:
+                pickle.dump(self, file)
+
+        else:
+            #print(f"Saving character {user_id}...")
+            # Search for the character in the db
+            query = "SELECT id from Entities WHERE uid = " + str(user_id)
+            self.db_cursor.execute(query)
+            query_res = self.db_cursor.fetchall()
+
+            # Must transform the data because vars() returns a pointer to the class values
+            self.entity_id = user_id
+            save_data = {}
+            data = vars(self)
+
+            for key in data.keys():
+                attr_value = getattr(self, key)
+                save_data[key] = attr_value
+
+            save_data["uid"] = user_id
+            save_data['char_role'] = self.get_role().role_name
+            save_data['raw_stats'] = json.dumps(self.get_raw_stats())
+            save_data['stats'] = json.dumps(self.get_stats())
+            save_data['skills'] = json.dumps(self.get_skills())
+            save_data['abilities'] = json.dumps(self.get_abilities())
+            save_data['inventory'] = self.get_inventory().print()
+
+            if save_data['height'] == "":
+                save_data['height'] = 0
+            
+            if save_data['weight'] == "":
+                save_data['weight'] = 0
+
+            if query_res == []:
+                # No char found in DB, Insert
+                query = ("INSERT INTO `Entities` "
+                            "(uid, ent_type, name, surname, gender, race, height, weight, nsfw, description, backstory, char_role, char_level, role_level, mhp, mmp, msp, hp, mp, sp, ac, cur_exp, req_exp, raw_stats, stat_point, stats, skills, abilities, inventory) "
+                            f"VALUES(\"{save_data['uid']}\", \"{save_data['ent_type']}\", \"{save_data['name']}\", \"{save_data['surname']}\", \"{save_data['gender']}\", \"{save_data['race']}\", {int(save_data['height'])}, {int(save_data['weight'])}, "
+                            f"{int(save_data['nsfw'])}, \"{save_data['description']}\", \"{save_data['backstory']}\", \"{save_data['char_role']}\", {save_data['char_level']}, "
+                            f"{save_data['role_level']}, {save_data['mhp']}, {save_data['mmp']}, {save_data['msp']}, {save_data['hp']}, {save_data['mp']}, {save_data['sp']}, {save_data['ac']}, "
+                            f"{save_data['cur_exp']}, {save_data['req_exp']}, '{save_data['raw_stats']}', {save_data['stat_point']}, '{save_data['stats']}', '{save_data['skills']}', '{save_data['abilities']}', '{save_data['inventory']}');")
+
+            else:
+                # Char exists, Update
+                query = (f"UPDATE `Entities` SET "
+                            f"name = \"{save_data['name']}\", surname = \"{save_data['surname']}\", gender = \"{save_data['gender']}\", race = \"{save_data['race']}\", "
+                            f"height = {int(save_data['height'])}, weight = {int(save_data['weight'])}, nsfw = {int(save_data['nsfw'])}, description = \"{save_data['description']}\", backstory = \"{save_data['backstory']}\", "
+                            f"char_role = \"{save_data['char_role']}\", char_level = {save_data['char_level']}, role_level = {save_data['role_level']}, "
+                            f"mhp = {save_data['mhp']}, mmp = {save_data['mmp']}, msp = {save_data['msp']}, hp = {save_data['hp']}, mp = {save_data['mp']}, sp = {save_data['sp']}, ac = {save_data['ac']}, "
+                            f"cur_exp = {save_data['cur_exp']}, req_exp = {save_data['req_exp']}, "
+                            f"raw_stats = '{save_data['raw_stats']}', stat_point = {save_data['stat_point']}, stats = '{save_data['stats']}', "
+                            f"skills = '{save_data['skills']}', abilities = '{save_data['abilities']}', inventory = '{save_data['inventory']}' "
+                            f"WHERE uid = \"{save_data['uid']}\";")
+            
+
+            self.db_cursor.execute(query)
+
+    def delete_character(self, user_id: int):
+        # Search for the character in the db
+        query = "SELECT id from Entities WHERE uid = " + str(user_id)
+        self.db_cursor.execute(query)
+        result = self.db_cursor.fetchall()
+
+        if result == []:
+            # No char in DB
+            # try remove char file
+            try:
+                os.remove('./game_saves/character_'+str(user_id)+'.pickle')
+
+            except Exception:
+                print(f"Character file with uid: {user_id} not found in fs.")
+
+        else:
+            query_del = ("DELETE FROM `Entities` "
+                         f"WHERE uid = \"{user_id}\";")
+
+            self.db_cursor.execute(query_del)
+    
     def describe(self):
         """
         Return the character's description
@@ -115,8 +239,15 @@ class Entity:
 
         return character_description[0]
     
-    def use_ability(self, ability_name, target):
-        return self.char_role.use_ability(self, self.mp, self.sp, ability_name, target)    
+    def use_ability(self, ability_name, targets=[]):
+        if type(targets) is not list:
+            if targets is not None:
+                targets = [targets]
+
+            else:
+                targets = []
+
+        return self.char_role.use_ability(self, self.mp, self.sp, ability_name, targets)    
 
     def check_level_up(self):
         if self.cur_exp >= self.req_exp and self.cur_exp != 0:
@@ -161,6 +292,24 @@ class Entity:
         self.mp = self.mmp
         self.sp = self.msp
     
+    def apply_dmg(self, dmg_amt):
+        if self.hp >= dmg_amt:
+            self.hp = self.hp - dmg_amt
+        else:
+            self.hp = 0
+
+        self.save_character(self, self.entity_id)
+
+    def apply_heal(self, heal_amt):
+        total_hp_after_heal = self.hp + heal_amt
+
+        if total_hp_after_heal > self.mhp:
+            self.hp = self.mhp
+        else:
+            self.hp = total_hp_after_heal
+
+        self.save_character(self, self.entity_id) 
+    
     def drop_items(self):
         # Add drops mechanics
         pass
@@ -187,10 +336,25 @@ class Entity:
         else:
             return result_values
     
-    def roll_dice(self, dice_type):
+    def roll_dice(self, dice_type, quantity=1):
         dice = Dice(dice_type)
-        return dice.roll(1)
+        return dice.roll(quantity)
 
+    def has_unspent_stats(self):
+        """
+        Docstring for has_unspent_stats
+        
+        :return: True if the character has unspent stats, otherwise False
+        :rtype: bool
+        """
+        
+        if len(self.raw_stats) > 0:
+            return True
+        
+        if self.stat_point > 0:
+            return True
+        
+        return False
 
 
     # =========================================================
@@ -210,6 +374,9 @@ class Entity:
 
     def get_stats(self):
         return self.stats
+    
+    def get_stat_points(self):
+        return self.stat_point
     
     def get_raw_stats(self):
         return self.raw_stats
@@ -234,8 +401,9 @@ class Entity:
         self.raw_stats = raw_stats
 
     def set_stat(self, stat_value: int, character_stat: str):
-        if stat_value <= self.stat_point and character_stat in self.CHARACTER_STATS:
+        if stat_value <= self.stat_point and character_stat in self.STATS:
             self.stats[character_stat] += stat_value
+            self.stat_point -= stat_value
 
     def set_raw_stat(self, raw_stat_index: int, character_stat: str, empty: bool):
         if empty:

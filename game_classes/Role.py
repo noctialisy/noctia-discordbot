@@ -1,7 +1,9 @@
 # Main class for handling character roles (Mage, Warrior, Paladin, Dancer, etc.)
 import json, mariadb
 
-class Role:
+from .GameSystem import GameSystem
+
+class Role(GameSystem):
     ROLES = []
     role_name = ""
     role_hit_dice = ""
@@ -18,21 +20,7 @@ class Role:
     # INIT
     # =========================================================
     def __init__(self, role_name :str):
-
-        with open('./settings.json', 'r', encoding='utf-8') as settings_file:
-            self.settings = json.loads(settings_file.read())
-
-
-        self.db_connection = mariadb.connect(
-            user=self.settings['db_user'],
-            password=self.settings['db_pass'],
-            host=self.settings['db_host'],
-            port=self.settings['db_port'],
-            database=self.settings['db_name'],
-            autocommit=True,
-
-        )
-        self.db_cursor = self.db_connection.cursor(dictionary=True)
+        super().__init__()
 
         self.ROLES = self.get_role_names()
 
@@ -54,7 +42,7 @@ class Role:
     # =========================================================
     # Main methods
     # =========================================================
-    def use_ability(self, entity, mp, sp, ability_name, trg_entity):
+    def use_ability(self, entity, mp, sp, ability_name, trg_entities=[]):
         ability = ''
 
         if type(self.role_abilities) is str:
@@ -81,7 +69,12 @@ class Role:
         if sp < ability['req_sp']:
             return "Lacks the required SP to use the ability."
         
+        # If no target then target self
+        if type(trg_entities) is not list:
+            trg_entities = [entity]
+        
         # Use ability
+        ability_type = ability['type']
         ability_lines = {
             "cast": ability['usage_line_cast'],
             "success": ability['usage_line_success'],
@@ -92,31 +85,90 @@ class Role:
             ability_lines[key] = str(ability_lines[key]).replace('{entity_name}', entity.name)
             ability_lines[key] = str(ability_lines[key]).replace('{main_weapon}', entity.inventory.equipment["main_weapon"])
             ability_lines[key] = str(ability_lines[key]).replace('{pronoun_self}', entity.pronoun_self)
-            ability_lines[key] = str(ability_lines[key]).replace('{target_name}', trg_entity.name)
 
-        # Cast the ability
-        # Attack check
-        trg_entity_ac = trg_entity.ac
-        entity_roll = entity.roll_dice("d20")[0]
+        calc_results = []
+        action_results = []
 
-        if entity_roll > trg_entity_ac:
-            # Calc dmg
-            dmg = self.calculate_dmg(entity, trg_entity)
-            #ability_lines = self.role_class.ABILITY_TREE[ability_name]['usage_lines']
+        if ability_type == 'heal':
+            # Perform Heal
+            calc_results = self.calculate_heal(entity, trg_entities)
 
-            for key, value in ability_lines.items():
-                ability_lines[key] = str(ability_lines[key]).replace('{dmg}', str(dmg))
-                ability_lines[key] = str(ability_lines[key]).replace('{dmg_type}', str('physical'))
-
-            return ["success", ability_lines]
-        
         else:
-            return ["fail", ability_lines]
+            # Perform Attack
+            # # Attack check [] || [result, [dmg]]
+            calc_results = self.calculate_dmg(entity, trg_entities)
 
-    def calculate_dmg(self, entity, trg_entity):
-        dmg = entity.roll_dice("d10")
-        return dmg
+        for result in calc_results:
+            # Replace target names
+            ability_lines['cast'] = str(ability_lines['cast']).replace('{target_name}', result[0])
+            ability_lines['success'] = str(ability_lines['success']).replace('{target_name}', result[0])
+            ability_lines['fail'] = str(ability_lines['fail']).replace('{target_name}', result[0])
+
+            # Replace dmg type
+            ability_lines['cast'] = str(ability_lines['cast']).replace('{dmg_type}', ability_type)
+            ability_lines['success'] = str(ability_lines['success']).replace('{dmg_type}', ability_type)
+            ability_lines['fail'] = str(ability_lines['fail']).replace('{dmg_type}', ability_type)
+
+            # Replace heal/dmg amt
+            ability_lines['cast'] = str(ability_lines['cast']).replace('{dmg}', str(result[2]))
+            ability_lines['success'] = str(ability_lines['success']).replace('{dmg}', str(result[2]))
+            ability_lines['fail'] = str(ability_lines['fail']).replace('{dmg}', str(result[2]))
+
+            action_results.append([result, ability_lines])
+
+        return action_results
+
+    # Handle dmg
+    def calculate_dmg(self, entity, entity_targets=[]):
+        action_results = []
+
+        if type(entity_targets) is not list:
+            # Target self if no target
+            entity_targets = [entity]
+
+        # There's an enemy entity
+        if entity_targets != []:
+
+            # Calculate dmg for all targets
+            for target in entity_targets:
+                target_ac = target.ac
+                entity_roll = entity.roll_dice("d20")[0]
+
+                if entity_roll > target_ac:
+                    # Calc dmg
+                    dmg = entity.roll_dice("d10")
+                    target.apply_dmg(dmg[0])
+                    action_results.append([target.name, 'success', dmg])
+                
+                else:
+                    action_results.append([target.name, 'fail', 0])
+
+        else:
+            action_results = [['empty', 'fail', [0]]]
+
+
+        return action_results
     
+    # Handle heals
+    def calculate_heal(self, entity, entity_targets=[]):
+        action_results = []
+
+        if type(entity_targets) is not list:
+            # Target self if no entity provided
+            entity_targets = [entity]
+        
+        if entity_targets != []:
+            # Heal all targets
+            for target in entity_targets:
+                heal_amt = entity.roll_dice('d20')
+                target.apply_heal(heal_amt[0])
+                action_results.append([target.name, 'success', heal_amt])
+
+        else:
+            action_results = [['empty', 'fail', [0]]]
+
+        return action_results
+
 
     
     # =========================================================

@@ -7,7 +7,6 @@ from discord.commands import option
 
 # Game imports
 # -------------------------------------
-from game_classes.GameSystem import GameSystem
 from game_classes.Character import Character
 from game_classes.Dice import Dice
 
@@ -24,7 +23,6 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
     token = settings["discord.bot.token"]
     intents = discord.Intents.all()
     bot = discord.Bot(intents=intents)
-    game_system = GameSystem()
 
 
     # =========================================================
@@ -122,9 +120,10 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
         user_id = ctx.author.id
 
         # Check if the user already has a character
-        test_char = game_system.load_character(user_id)
+        test_char = Character()
+        test_char = test_char.load_character(user_id)
 
-        if test_char != game_system.NO_CHARACTER_FOUND_ERROR:
+        if test_char != test_char.NO_CHARACTER_FOUND_ERROR:
             # Character already present
             await ctx.response.send_message(f"You already created a character with name: {test_char.get_name()}", ephemeral=True)
 
@@ -164,7 +163,7 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
             )
 
             # Save character
-            game_system.save_character(user_id, character)
+            character.save_character(user_id)
             await ctx.followup.send(f"Your character has been created and saved!.", ephemeral=True)
 
     
@@ -180,13 +179,14 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
         user_id = ctx.author.id
 
         # Check if the user already has a character
-        character = game_system.load_character(user_id)
+        character = Character()
+        character = character.load_character(character, user_id)
 
-        if character != game_system.NO_CHARACTER_FOUND_ERROR:
-            game_system.delete_character(user_id)
+        if character != character.NO_CHARACTER_FOUND_ERROR:
+            character.delete_character(user_id)
             await ctx.response.send_message("Your character has been deleted. Now you can create a new one.", ephemeral=True)
         else:
-            await ctx.response.send_message(game_system.NO_RP_CHARACTER_ERROR, ephemeral=True)
+            await ctx.response.send_message(character.NO_RP_CHARACTER_ERROR, ephemeral=True)
     
     
     
@@ -219,10 +219,11 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
                 return
         
         user_id = ctx.author.id
-        character = game_system.load_character(user_id)
+        character = Character()
+        character = character.load_character(character, user_id)
 
         # Character existence check
-        if character != game_system.NO_CHARACTER_FOUND_ERROR:
+        if character != character.NO_CHARACTER_FOUND_ERROR:
             character.set_raw_stat(0, first_stat, False)
             character.set_raw_stat(1, second_stat, False)
             character.set_raw_stat(2, third_stat, False)
@@ -233,11 +234,11 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
 
             character.calc_stats()
 
-            game_system.save_character(user_id, character)
+            character.save_character(user_id, character)
             await ctx.response.send_message("RAW Stat composition assigned: " + str(character.get_stats()), ephemeral=True)
 
         else:
-            await ctx.response.send_message(game_system.NO_RP_CHARACTER_ERROR, ephemeral=True)
+            await ctx.response.send_message(character.NO_RP_CHARACTER_ERROR, ephemeral=True)
 
 
 
@@ -256,22 +257,23 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
             return
         
         user_id = ctx.author.id
-        character = game_system.load_character(user_id)
+        character = Character()
+        character = character.load_character(character, user_id)
 
         # Character existence check
-        if character != game_system.NO_CHARACTER_FOUND_ERROR:
+        if character != character.NO_CHARACTER_FOUND_ERROR:
 
             # Check if the character has the stats they want to assign
             if character.get_stat_points() >= stat_value:
                 character.set_stat(stat_value, character_stat)
-                game_system.save_character(user_id, character)
+                character.save_character(user_id, character)
                 await ctx.response.send_message("Character stats assigned and saved!", ephemeral=True)
 
             else:
                 await ctx.response.send_message("You lack that amount of stat points", ephemeral=True)
 
         else:
-            await ctx.response.send_message(game_system.NO_RP_CHARACTER_ERROR, ephemeral=True)
+            await ctx.response.send_message(character.NO_RP_CHARACTER_ERROR, ephemeral=True)
 
 
 
@@ -285,11 +287,10 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
     @option("silent", description="Doesn't print your character and only give you info about your stats (Default: False)")
     async def check_character(ctx, silent=False):
         user_id = ctx.author.id
-        character = game_system.load_character(user_id)
-        
-        print(user_id)
+        character = Character()
+        character = character.load_character(character, user_id)
 
-        if character != game_system.NO_CHARACTER_FOUND_ERROR:
+        if type(character) is not str:
             #user_avatar = ctx.author.avatar
             embed = discord.Embed(
                 title=character.name + " " + character.surname,
@@ -326,7 +327,7 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
 
 
         else:
-            await ctx.response.send_message(game_system.NO_RP_CHARACTER_ERROR, ephemeral=False)
+            await ctx.response.send_message(character, ephemeral=False)
 
 
 
@@ -340,18 +341,19 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
     @option("silent", description="Doesn't print your character and only give you info about your stats (Default: False)")
     async def rp_rest(ctx, silent=False):
         user_id = ctx.author.id
-        character = game_system.load_character(user_id)
+        character = Character()
+        character = character.load_character(character, user_id)
 
         # Character existence check
-        if character != game_system.NO_CHARACTER_FOUND_ERROR:
+        if character != character.NO_CHARACTER_FOUND_ERROR:
             character.rest()
-            game_system.save_character(user_id, character)
+            character.save_character(user_id, character)
 
             await ctx.response.send_message("You find a comfortable and safe place close by and allow yourself a few moments of respite\n\n" +
                                             "You wake up fully rested!", ephemeral=silent)
 
         else:
-            await ctx.response.send_message(game_system.NO_RP_CHARACTER_ERROR, ephemeral=True)
+            await ctx.response.send_message(character.NO_RP_CHARACTER_ERROR, ephemeral=True)
     
     
     
@@ -366,36 +368,46 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
     @option("target", description="The target of the action (Optional - Depends on action)")
     async def rp_action(ctx, ability_name: str, target = None):
         user_id = ctx.author.id
-        character = game_system.load_character(user_id)
+        character = Character()
+        character = character.load_character(character, user_id)
 
-        if character != game_system.NO_CHARACTER_FOUND_ERROR:
+        if character != character.NO_CHARACTER_FOUND_ERROR:
             target = str(target).replace("@", "").replace("<", "").replace(">", "")
 
-            get_discord_entities = game_system.get_discord_characters(user_id)
             is_user = False
+            get_user_entities = character.get_user_entities(user_id)
 
-            if get_discord_entities != game_system.NO_DB_DATA_ERROR:
+            if get_user_entities != character.NO_DB_DATA_ERROR:
                 is_user = True
 
             if is_user:
-                target_character = game_system.load_character(target)
-                character_ability_res = character.use_ability(ability_name, target_character)
+                target_character = Character()
+                target_character = character.load_character(target_character, target)
+                character_ability_res = character.use_ability(ability_name, [target_character])
 
                 if type(character_ability_res) == str:
                     await ctx.response.send_message(f"{character.name} {character_ability_res}", ephemeral=False)
 
                 else:
-                    await ctx.response.send_message(f"{character.name} {character_ability_res[1]["cast"]}!", ephemeral=False)
+                    action_result = f"*{character_ability_res[0][1]["cast"]}!*\n"
 
-                    if character_ability_res[0] == "success":
-                        await ctx.followup.send(f"{character_ability_res[1]["success"]}", ephemeral=False)
+                    # For each target in the skill result
+                    for ability_result in character_ability_res:
+                        result = ability_result[0][1]
+                        lines = ability_result[1]
 
-                    else:
-                        await ctx.followup.send(f"{character_ability_res[1]["fail"]}", ephemeral=False)
+                        if result == "success":
+                            action_result = action_result + "  - " + lines["success"] + "\n"
+
+                        else:
+                            action_result = action_result + "  - " + lines["fail"] + "\n"
+
+                    # Print the action results
+                    await ctx.response.send_message(f"{action_result}", ephemeral=False)
 
 
         else:
-            await ctx.response.send_message(game_system.NO_RP_CHARACTER_ERROR, ephemeral=True)
+            await ctx.response.send_message(character.NO_RP_CHARACTER_ERROR, ephemeral=True)
 
     
     
@@ -407,8 +419,21 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
     guild_ids=[discord_main_guild_id]
     )
     async def roll_dice(ctx, dice_type, quantity):
+        user_id = ctx.author.id
+
         dice = Dice(dice_type)
-        result = dice.roll(quantity)
+        character = Character()
+        character = character.load_character(character, user_id)
+        result = []
+
+        if character != character.NO_CHARACTER_FOUND_ERROR:
+            # Roll by using the character
+            result = character.roll_dice(dice_type, quantity)
+
+        else:
+            dice = Dice(dice_type)
+            result = dice.roll(quantity)
+
 
         if int(quantity) == 1:
             response = "The result of your " + quantity + dice_type + " roll is: " + str(result) + "!"

@@ -187,6 +187,7 @@ class Test:
             character.rest()
 
             # Use ability
+            new_character.name = "Test2"
             ability_use_result = character.use_ability('Attack', new_character)
 
             # Describe character
@@ -200,7 +201,7 @@ class Test:
                 print("## Ability cast result: " + str(ability_use_result))
             
             # Check user search
-            self.game_system.get_discord_characters(uid)
+            self.game_system.get_user_entities(uid)
 
             # Delete character
             self.game_system.delete_character(uid)
