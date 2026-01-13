@@ -129,8 +129,7 @@ class Test:
             if type(results) is not list:
                 raise Exception('## Character can\'t roll stats')
             else:
-                print("## Rolled stats: ")
-                print(results)
+                print("## Rolled stats: "+ str(results))
             
             # Assign stats
             character.set_raw_stat(0, "strength", False)
@@ -197,6 +196,11 @@ class Test:
 
             if ability_use_result == "No abilities":
                 raise Exception('## The character doesn\'t has that ability')
+            else:
+                print("## Ability cast result: " + str(ability_use_result))
+            
+            # Check user search
+            self.game_system.get_discord_characters(uid)
 
             # Delete character
             self.game_system.delete_character(uid)
@@ -236,8 +240,5 @@ class Test:
 
     # Clean the test
     def clean_test(self):
-        query = f'TRUNCATE TABLE Entities;'
-        self.cur_test.execute(query)
-        
         print('## Tests completed.')
 
