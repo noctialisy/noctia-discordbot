@@ -164,7 +164,7 @@ class GameSystem:
             save_data['stats'] = json.dumps(character.get_stats())
             save_data['skills'] = json.dumps(character.get_skills())
             save_data['abilities'] = json.dumps(character.get_abilities())
-            save_data['inventory'] = json.dumps(vars(character.get_inventory()))
+            save_data['inventory'] = character.get_inventory().print()
 
             if save_data['height'] == "":
                 save_data['height'] = 0
@@ -176,22 +176,22 @@ class GameSystem:
                 # No char found in DB, Insert
                 query = ("INSERT INTO `Entities` "
                             "(uid, ent_type, name, surname, gender, race, height, weight, nsfw, description, backstory, char_role, char_level, role_level, mhp, mmp, msp, hp, mp, sp, ac, cur_exp, req_exp, raw_stats, stat_point, stats, skills, abilities, inventory) "
-                            f"VALUES(\"{save_data["uid"]}\", \"{save_data["ent_type"]}\", \"{save_data["name"]}\", \"{save_data["surname"]}\", \"{save_data["gender"]}\", \"{save_data["race"]}\", {int(save_data["height"])}, {int(save_data["weight"])}, "
-                            f"{int(save_data["nsfw"])}, \"{save_data["description"]}\", \"{save_data["backstory"]}\", \"{save_data["char_role"]}\", {save_data["char_level"]}, "
-                            f"{save_data["role_level"]}, {save_data["mhp"]}, {save_data["mmp"]}, {save_data["msp"]}, {save_data["hp"]}, {save_data["mp"]}, {save_data["sp"]}, {save_data["ac"]}, "
-                            f"{save_data["cur_exp"]}, {save_data["req_exp"]}, '{save_data["raw_stats"]}', {save_data["stat_point"]}, '{save_data["stats"]}', '{save_data["skills"]}', '{save_data["abilities"]}', '{save_data["inventory"]}');")
+                            f"VALUES(\"{save_data['uid']}\", \"{save_data['ent_type']}\", \"{save_data['name']}\", \"{save_data['surname']}\", \"{save_data['gender']}\", \"{save_data['race']}\", {int(save_data['height'])}, {int(save_data['weight'])}, "
+                            f"{int(save_data['nsfw'])}, \"{save_data['description']}\", \"{save_data['backstory']}\", \"{save_data['char_role']}\", {save_data['char_level']}, "
+                            f"{save_data['role_level']}, {save_data['mhp']}, {save_data['mmp']}, {save_data['msp']}, {save_data['hp']}, {save_data['mp']}, {save_data['sp']}, {save_data['ac']}, "
+                            f"{save_data['cur_exp']}, {save_data['req_exp']}, '{save_data['raw_stats']}', {save_data['stat_point']}, '{save_data['stats']}', '{save_data['skills']}', '{save_data['abilities']}', '{save_data['inventory']}');")
 
             else:
                 # Char exists, Update
                 query = (f"UPDATE `Entities` SET "
-                            f"name = \"{save_data["name"]}\", surname = \"{save_data["surname"]}\", gender = \"{save_data["gender"]}\", race = \"{save_data["race"]}\", "
-                            f"height = {int(save_data["height"])}, weight = {int(save_data["weight"])}, nsfw = {int(save_data["nsfw"])}, description = \"{save_data["description"]}\", backstory = \"{save_data["backstory"]}\", "
-                            f"char_role = \"{save_data["char_role"]}\", char_level = {save_data["char_level"]}, role_level = {save_data["role_level"]}, "
-                            f"mhp = {save_data["mhp"]}, mmp = {save_data["mmp"]}, msp = {save_data["msp"]}, hp = {save_data["hp"]}, mp = {save_data["mp"]}, sp = {save_data["sp"]}, ac = {save_data["ac"]}, "
-                            f"cur_exp = {save_data["cur_exp"]}, req_exp = {save_data["req_exp"]}, "
-                            f"raw_stats = '{save_data["raw_stats"]}', stat_point = {save_data["stat_point"]}, stats = '{save_data["stats"]}', "
-                            f"skills = '{save_data["skills"]}', abilities = '{save_data["abilities"]}', inventory = '{save_data["inventory"]}' "
-                            f"WHERE uid = \"{save_data["uid"]}\";")
+                            f"name = \"{save_data['name']}\", surname = \"{save_data['surname']}\", gender = \"{save_data['gender']}\", race = \"{save_data['race']}\", "
+                            f"height = {int(save_data['height'])}, weight = {int(save_data['weight'])}, nsfw = {int(save_data['nsfw'])}, description = \"{save_data['description']}\", backstory = \"{save_data['backstory']}\", "
+                            f"char_role = \"{save_data['char_role']}\", char_level = {save_data['char_level']}, role_level = {save_data['role_level']}, "
+                            f"mhp = {save_data['mhp']}, mmp = {save_data['mmp']}, msp = {save_data['msp']}, hp = {save_data['hp']}, mp = {save_data['mp']}, sp = {save_data['sp']}, ac = {save_data['ac']}, "
+                            f"cur_exp = {save_data['cur_exp']}, req_exp = {save_data['req_exp']}, "
+                            f"raw_stats = '{save_data['raw_stats']}', stat_point = {save_data['stat_point']}, stats = '{save_data['stats']}', "
+                            f"skills = '{save_data['skills']}', abilities = '{save_data['abilities']}', inventory = '{save_data['inventory']}' "
+                            f"WHERE uid = \"{save_data['uid']}\";")
             
 
             self.db_cursor.execute(query)
