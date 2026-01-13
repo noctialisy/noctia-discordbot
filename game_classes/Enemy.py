@@ -71,10 +71,20 @@ class Enemy(Entity):
 
         if rolled_stats_sum == 18:
             self.tag = "Epic Fail"
-        elif rolled_stats_sum > 18 and rolled_stats_sum < 108:
+        elif rolled_stats_sum <= 30:
+            self.tag = "Fail"
+        elif rolled_stats_sum > 30 and rolled_stats_sum <= 40:
+            self.tag = "Weakling"
+        elif rolled_stats_sum > 40 and rolled_stats_sum <= 60:
             self.tag = "Common"
-        elif rolled_stats_sum == 108:
+        elif rolled_stats_sum > 60 and rolled_stats_sum <= 80:
+            self.tag = "Elite"
+        elif rolled_stats_sum > 80 and rolled_stats_sum <= 90:
+            self.tag = "Epic"
+        elif rolled_stats_sum > 90 and rolled_stats_sum < 108:
             self.tag = "Legendary"
+        elif rolled_stats_sum == 108:
+            self.tag = "Epic Legendary"
 
         self.description = f"{race} {role} [{self.tag}]"
         sample = random.sample([0, 1, 2, 3, 4, 5], 6)
