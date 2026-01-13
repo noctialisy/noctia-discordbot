@@ -11,7 +11,7 @@ CREATE TABLE Entities (
 	nsfw INTEGER,
 	description TEXT,
 	backstory TEXT,
-	char_role BLOB,
+	char_role TEXT,
 	char_level INTEGER DEFAULT (1),
 	role_level INTEGER DEFAULT (1),
 	mhp INTEGER DEFAULT (0),

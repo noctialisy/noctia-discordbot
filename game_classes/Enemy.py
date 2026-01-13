@@ -38,11 +38,10 @@ class Enemy(Entity):
 
         if role is None:
             role = random.randint(0, len(self.ROLES) - 1)
+            role = self.ROLES[role]
             
             if role == 'Any':
                 role = 'Warrior'
-
-            role = self.ROLES[role]
 
         # Check inputs
         if race not in self.RACES:

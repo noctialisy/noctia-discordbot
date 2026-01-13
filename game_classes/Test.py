@@ -4,7 +4,7 @@
 # Main imports
 # -------------------------------------
 import os, shutil, pathlib, json, random, discord
-import traceback
+import mariadb, traceback
 from pathlib import Path
 from discord.ext import commands
 from discord.commands import option
@@ -20,28 +20,51 @@ from .Dice import Dice
 
 class Test:
     game_system = ""
+    conn_example = ""
+    cur_example = ""
+    conn_test = ""
+    cur_test = ""
+    settings = []
 
 
     # ===============================================
     # Init
     # ===============================================
     def __init__(self):
+        self.game_system = GameSystem('game_test')
+        
         try:
-            example_db_file = Path('./game_db/example.db')
-            test_db_file = Path('./game_db/test.db')
+            with open('./settings.json', 'r', encoding='utf-8') as settings_file:
+                self.settings = json.loads(settings_file.read())
 
-            if example_db_file.is_file():
-                
-                # Failed before or other cases (Clean)
-                if test_db_file.is_file():
-                    os.remove(test_db_file)
+            example_db = "game_example"
+            test_db = "game_test"
 
-                shutil.copy2(example_db_file, test_db_file)
-                self.game_system = GameSystem(test_db_file)
+            self.conn_example = mariadb.connect(
+                user=self.settings['db_user'],
+                password=self.settings['db_pass'],
+                host=self.settings['db_host'],
+                port=self.settings['db_port'],
+                database=example_db,
+                autocommit=True,
 
-            else:
-                raise Exception('## Example DB missing. Can\'t run')
-            
+            )
+            self.cur_example = self.conn_example.cursor(dictionary=True)
+
+            self.conn_test = mariadb.connect(
+                user=self.settings['db_user'],
+                password=self.settings['db_pass'],
+                host=self.settings['db_host'],
+                port=self.settings['db_port'],
+                database=test_db,
+                autocommit=True,
+
+            )
+            self.cur_test = self.conn_test.cursor(dictionary=True)
+
+        except mariadb.Error as e:
+            print(f"Error connecting to MariaDB Platform: {e}")
+            return
 
         except Exception as e:
             print("## Can't initialize GameSystem class on test.db")
@@ -57,38 +80,23 @@ class Test:
     def test_db(self):
         print('## DB test start ===')
         tables = ["Abilities", "Entities", "Roles"]
+
         for table in tables:
-            query = "SELECT sql from sqlite_schema WHERE name = :name"
-            data = {"name": table}
+            query = "DESCRIBE " + table
 
             try:
-                self.game_system.db_cursor.execute(query, data)
-                test = self.game_system.db_cursor.fetchall()
+                self.cur_example.execute(query)
+                example_table = self.cur_example.fetchall()
 
-                if test is None:
-                    raise Exception('Table not found!')
-                
-                with open('./game_db/sql/' + str(table).lower() + '.sql', 'r', encoding='utf-8') as schema_file:
-                    table_supposed_schema = schema_file.read()
+                self.cur_test.execute(query)
+                test_table = self.cur_test.fetchall()
 
-                    # Create the test table
-                    create_query = table_supposed_schema.replace("CREATE TABLE "+str(table), "CREATE TABLE "+str(table)+"2")
-                    self.game_system.db_cursor.execute(create_query)
-
-                    # Find the test table
-                    query = "SELECT sql from sqlite_schema WHERE name = :name"
-                    data = {"name": str(table)+"2"}
-                    self.game_system.db_cursor.execute(query, data)
-                    test_table = self.game_system.db_cursor.fetchall()
-                    test_table = test_table[0]['sql']
-                    test_schema = str(test_table).replace("CREATE TABLE "+str(table)+"2", "CREATE TABLE "+str(table))
-
-                    # Check if the schema matches
-                    if table_supposed_schema != test_schema:
-                        print(table_supposed_schema)
-                        print()
-                        print(test_schema)
-                        raise Exception(f'## The table {table} is malformed for this version.')
+                # Check if the schema matches
+                if test_table != example_table:
+                    print(example_table)
+                    print()
+                    print(test_table)
+                    raise Exception(f'## The table {table} is malformed for this version.')
                     
             except Exception as e:
                 print(f'## There was a problem with the table {table}')
@@ -225,15 +233,11 @@ class Test:
             return
         
         print('## Enemy test pass!')
-    
-    # Close db connections
-    async def close_db_connection(self):
-        self.game_system.db_cursor.close()
-        self.game_system.db_connection.close()
 
     # Clean the test
-    async def clean_test(self):
-        await self.close_db_connection()
-        os.remove('./game_db/test.db')
+    def clean_test(self):
+        query = f'TRUNCATE TABLE Entities;'
+        self.cur_test.execute(query)
+        
         print('## Tests completed.')
 

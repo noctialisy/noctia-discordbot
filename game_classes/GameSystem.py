@@ -1,4 +1,4 @@
-import os, base64, json, pickle, sqlite3
+import os, base64, json, pickle, mariadb
 from .Character import Character
 
 class GameSystem:
@@ -8,18 +8,29 @@ class GameSystem:
     
     db_connection = ""
     db_cursor = ""
+    settings = []
 
     # =========================================================
     # INIT
     # =========================================================
     def __init__(self, db_name=None):
         if db_name is None:
-            db_name = './game_db/main.db'
+            db_name = 'game_example'
 
-        self.db_connection = sqlite3.connect(db_name)
-        self.db_connection.row_factory = lambda cursor, row: {col[0] : row[i] for i,col in enumerate(cursor.description)}
-        self.db_cursor = self.db_connection.cursor()
+        with open('./settings.json', 'r', encoding='utf-8') as settings_file:
+            self.settings = json.loads(settings_file.read())
 
+
+        self.db_connection = mariadb.connect(
+            user=self.settings['db_user'],
+            password=self.settings['db_pass'],
+            host=self.settings['db_host'],
+            port=self.settings['db_port'],
+            database=self.settings['db_name'],
+            autocommit=True,
+
+        )
+        self.db_cursor = self.db_connection.cursor(dictionary=True)
 
     
     # =========================================================
@@ -60,9 +71,10 @@ class GameSystem:
 
         # Search for the character in the db
         query = "SELECT id from Entities WHERE uid = " + str(user_id)
-        query_res = self.db_cursor.execute(query)
+        self.db_cursor.execute(query)
+        result = self.db_cursor.fetchall()
 
-        if query_res.fetchone() is None:
+        if result == []:
             # No char found
             # Try user file
             try:
@@ -108,10 +120,12 @@ class GameSystem:
             
         else:
             query = "SELECT * from Entities WHERE uid = " + str(user_id)
-            query_res = self.db_cursor.execute(query)
+            self.db_cursor.execute(query)
+            result = self.db_cursor.fetchall()
+
 
             character = Character()
-            character.load(query_res.fetchall()[0])
+            character.load(result[0])
 
             return character
 
@@ -133,30 +147,12 @@ class GameSystem:
             #print(f"Saving character {user_id}...")
             # Search for the character in the db
             query = "SELECT id from Entities WHERE uid = " + str(user_id)
-            query_res = self.db_cursor.execute(query)
+            self.db_cursor.execute(query)
+            query_res = self.db_cursor.fetchall()
 
-            if query_res.fetchone() is None:
-                # No char found in DB, Insert
-                query = ("INSERT INTO `Entities` "
-                            "(uid, ent_type, name, surname, gender, race, height, weight, nsfw, description, backstory, char_role, char_level, role_level, mhp, mmp, msp, hp, mp, sp, ac, cur_exp, req_exp, raw_stats, stat_point, stats, skills, abilities, inventory) "
-                            "VALUES(:uid, :ent_type, :name, :surname, :gender, :race, :height, :weight, :nsfw, :description, :backstory, :char_role, :char_level, :role_level, :mhp, :mmp, :msp, :hp, :mp, :sp, :ac, :cur_exp, :req_exp, :raw_stats, :stat_point, :stats, :skills, :abilities, :inventory);")
-
-            else:
-                # Char exists, Update
-                query = ("UPDATE `Entities` SET "
-                            "name = :name, surname = :surname, gender = :gender, race = :race, "
-                            "height = :height, weight = :weight, nsfw = :nsfw, description = :description, backstory = :backstory, "
-                            "char_role = :char_role, char_level = :char_level, role_level = :role_level, "
-                            "mhp = :mhp, mmp = :mmp, msp = :msp, hp = :hp, mp = :mp, sp = :sp, ac = :ac, "
-                            "cur_exp = :cur_exp, req_exp = :req_exp, "
-                            "raw_stats = :raw_stats, stat_point = :stat_point, stats = :stats, "
-                            "skills = :skills, abilities = :abilities, inventory = :inventory "
-                            "WHERE uid = :uid;")
-                
-            data = vars(character)
-            
             # Must transform the data because vars() returns a pointer to the class values
             save_data = {}
+            data = vars(character)
 
             for key in data.keys():
                 attr_value = getattr(character, key)
@@ -170,15 +166,43 @@ class GameSystem:
             save_data['abilities'] = json.dumps(character.get_abilities())
             save_data['inventory'] = json.dumps(vars(character.get_inventory()))
 
-            self.db_cursor.execute(query, save_data)
-            self.db_connection.commit()
+            if save_data['height'] == "":
+                save_data['height'] = 0
+            
+            if save_data['weight'] == "":
+                save_data['weight'] = 0
+
+            if query_res == []:
+                # No char found in DB, Insert
+                query = ("INSERT INTO `Entities` "
+                            "(uid, ent_type, name, surname, gender, race, height, weight, nsfw, description, backstory, char_role, char_level, role_level, mhp, mmp, msp, hp, mp, sp, ac, cur_exp, req_exp, raw_stats, stat_point, stats, skills, abilities, inventory) "
+                            f"VALUES(\"{save_data["uid"]}\", \"{save_data["ent_type"]}\", \"{save_data["name"]}\", \"{save_data["surname"]}\", \"{save_data["gender"]}\", \"{save_data["race"]}\", {int(save_data["height"])}, {int(save_data["weight"])}, "
+                            f"{int(save_data["nsfw"])}, \"{save_data["description"]}\", \"{save_data["backstory"]}\", \"{save_data["char_role"]}\", {save_data["char_level"]}, "
+                            f"{save_data["role_level"]}, {save_data["mhp"]}, {save_data["mmp"]}, {save_data["msp"]}, {save_data["hp"]}, {save_data["mp"]}, {save_data["sp"]}, {save_data["ac"]}, "
+                            f"{save_data["cur_exp"]}, {save_data["req_exp"]}, '{save_data["raw_stats"]}', {save_data["stat_point"]}, '{save_data["stats"]}', '{save_data["skills"]}', '{save_data["abilities"]}', '{save_data["inventory"]}');")
+
+            else:
+                # Char exists, Update
+                query = (f"UPDATE `Entities` SET "
+                            f"name = \"{save_data["name"]}\", surname = \"{save_data["surname"]}\", gender = \"{save_data["gender"]}\", race = \"{save_data["race"]}\", "
+                            f"height = {int(save_data["height"])}, weight = {int(save_data["weight"])}, nsfw = {int(save_data["nsfw"])}, description = \"{save_data["description"]}\", backstory = \"{save_data["backstory"]}\", "
+                            f"char_role = \"{save_data["char_role"]}\", char_level = {save_data["char_level"]}, role_level = {save_data["role_level"]}, "
+                            f"mhp = {save_data["mhp"]}, mmp = {save_data["mmp"]}, msp = {save_data["msp"]}, hp = {save_data["hp"]}, mp = {save_data["mp"]}, sp = {save_data["sp"]}, ac = {save_data["ac"]}, "
+                            f"cur_exp = {save_data["cur_exp"]}, req_exp = {save_data["req_exp"]}, "
+                            f"raw_stats = '{save_data["raw_stats"]}', stat_point = {save_data["stat_point"]}, stats = '{save_data["stats"]}', "
+                            f"skills = '{save_data["skills"]}', abilities = '{save_data["abilities"]}', inventory = '{save_data["inventory"]}' "
+                            f"WHERE uid = \"{save_data["uid"]}\";")
+            
+
+            self.db_cursor.execute(query)
 
     def delete_character(self, user_id: int):
         # Search for the character in the db
         query = "SELECT id from Entities WHERE uid = " + str(user_id)
-        query_res = self.db_cursor.execute(query)
+        self.db_cursor.execute(query)
+        result = self.db_cursor.fetchall()
 
-        if query_res.fetchone() is None:
+        if result == []:
             # No char in DB
             # try remove char file
             try:
@@ -189,10 +213,6 @@ class GameSystem:
 
         else:
             query_del = ("DELETE FROM `Entities` "
-                         "WHERE uid = :uid;")
-            data = {
-                "uid": user_id
-            }
+                         f"WHERE uid = \"{user_id}\";")
 
-            self.db_cursor.execute(query_del, data)
-            self.db_connection.commit()
+            self.db_cursor.execute(query_del)

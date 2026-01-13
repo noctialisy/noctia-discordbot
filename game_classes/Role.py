@@ -1,5 +1,5 @@
 # Main class for handling character roles (Mage, Warrior, Paladin, Dancer, etc.)
-import sqlite3
+import json, mariadb
 
 class Role:
     ROLES = []
@@ -18,13 +18,26 @@ class Role:
     # INIT
     # =========================================================
     def __init__(self, role_name :str):
-        self.db_connection = sqlite3.connect('./game_db/main.db')
-        self.db_connection.row_factory = lambda cursor, row: {col[0] : row[i] for i,col in enumerate(cursor.description)}
-        self.db_cursor = self.db_connection.cursor()
+
+        with open('./settings.json', 'r', encoding='utf-8') as settings_file:
+            self.settings = json.loads(settings_file.read())
+
+
+        self.db_connection = mariadb.connect(
+            user=self.settings['db_user'],
+            password=self.settings['db_pass'],
+            host=self.settings['db_host'],
+            port=self.settings['db_port'],
+            database=self.settings['db_name'],
+            autocommit=True,
+
+        )
+        self.db_cursor = self.db_connection.cursor(dictionary=True)
 
         self.ROLES = self.get_role_names()
 
         if self.ROLES == self.NO_DB_DATA_ERROR:
+            print("Role class had a db fetching error!")
             self.ROLES = []
 
         if role_name in self.ROLES:
@@ -33,6 +46,9 @@ class Role:
             self.role_magic_dice = self.get_role_magic_dice(self.role_name)
             self.role_special_dice = self.get_role_special_dice(self.role_name)
             self.role_abilities = self.get_role_abilities(self.role_name)
+        else:
+            print("Role class had a db fetching error!")
+            self.role_name = "Not Init"
 
     
     # =========================================================
@@ -111,8 +127,8 @@ class Role:
     # =========================================================
     def get_role_names(self):
         query = "SELECT name FROM Roles;"
-        query_res = self.db_cursor.execute(query)
-        result = query_res.fetchall()
+        self.db_cursor.execute(query)
+        result = self.db_cursor.fetchall()
 
         if result == []:
             return self.NO_DB_DATA_ERROR
@@ -123,10 +139,9 @@ class Role:
             return list(data)
 
     def get_role_hit_dice(self, role_name):
-        query = "SELECT hit_dice FROM Roles WHERE name = :name;"
-        data = {"name": role_name}
-        query_res = self.db_cursor.execute(query, data)
-        result = query_res.fetchall()
+        query = f"SELECT hit_dice FROM Roles WHERE name = \"{role_name}\";"
+        self.db_cursor.execute(query)
+        result = self.db_cursor.fetchall()
 
         if result == []:
             return self.NO_DB_DATA_ERROR
@@ -136,10 +151,9 @@ class Role:
             return list(data)[0]
         
     def get_role_magic_dice(self, role_name):
-        query = "SELECT magic_dice FROM Roles WHERE name = :name;"
-        data = {"name": role_name}
-        query_res = self.db_cursor.execute(query, data)
-        result = query_res.fetchall()
+        query = f"SELECT magic_dice FROM Roles WHERE name = \"{role_name}\";"
+        self.db_cursor.execute(query)
+        result = self.db_cursor.fetchall()
 
         if result == []:
             return self.NO_DB_DATA_ERROR
@@ -149,10 +163,9 @@ class Role:
             return list(data)[0]
         
     def get_role_special_dice(self, role_name):
-        query = "SELECT special_dice FROM Roles WHERE name = :name;"
-        data = {"name": role_name}
-        query_res = self.db_cursor.execute(query, data)
-        result = query_res.fetchall()
+        query = f"SELECT special_dice FROM Roles WHERE name = \"{role_name}\";"
+        self.db_cursor.execute(query)
+        result = self.db_cursor.fetchall()
 
         if result == []:
             return self.NO_DB_DATA_ERROR
@@ -162,10 +175,10 @@ class Role:
             return list(data)[0]
     
     def get_role_abilities(self, role_name):
-        query = "SELECT * FROM Abilities WHERE role_name = :role_name OR role_name = :any_role;"
-        data = {"role_name": role_name, "any_role": "Any"}
-        query_res = self.db_cursor.execute(query, data)
-        result = query_res.fetchall()
+        any_role = "Any"
+        query = f"SELECT * FROM Abilities WHERE role_name = \"{role_name}\" OR role_name = \"{any_role}\";"
+        self.db_cursor.execute(query)
+        result = self.db_cursor.fetchall()
 
         if result == []:
             return self.NO_DB_DATA_ERROR

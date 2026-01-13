@@ -1,5 +1,5 @@
 # Main entity class, it is the base for NPCs, Enemies and Characters
-import json
+import json, base64
 
 from .Role import Role
 from .Inventory import Inventory
@@ -22,8 +22,8 @@ class Entity:
         self.gender = ""
         self.pronoun_self = ""
         self.race = ""
-        self.height = ""
-        self.weight = ""
+        self.height = 0
+        self.weight = 0
         self.nsfw = False
 
         self.description = ""
@@ -91,8 +91,8 @@ class Entity:
         self.ac = vars['ac']
         self.cur_exp = vars['cur_exp']
         self.req_exp = vars['req_exp']
-        self.raw_stats = json.loads(vars['raw_stats'])
         self.stat_point = vars['stat_point']
+        self.raw_stats = json.loads(vars['raw_stats'])
         self.stats = json.loads(vars['stats'])
         self.skills = json.loads(vars['skills'])
         self.abilities = json.loads(vars['abilities'])
