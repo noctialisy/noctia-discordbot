@@ -55,9 +55,6 @@ class Role:
     # Main methods
     # =========================================================
     def use_ability(self, entity, mp, sp, ability_name, trg_entity):
-        #print(ability_name)
-        #print(self.role_abilities)
-        
         ability = ''
 
         if type(self.role_abilities) is str:
