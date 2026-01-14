@@ -117,6 +117,15 @@ class Enemy(Entity):
             self.set_raw_stat(stat_index, stat, False)
 
         self.set_raw_stat(0, "", True)
+
+    def check_level_up(self):
+        leveled = super().check_level_up()
+
+        if leveled:
+            self.set_stat(1, self.char_role.get_main_stat())
+            self.set_stat(1, self.char_role.get_sub_stat())
+            self.set_stat(1, self.STATS[random.randint(0, len(self.STATS) - 1)])
+            self.calc_stats()
     
     def test(self):
         pass

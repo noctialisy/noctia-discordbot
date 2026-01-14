@@ -261,9 +261,15 @@ class Entity(GameSystem):
         return self.char_role.use_ability(self, self.mp, self.sp, ability_name, targets)    
 
     def check_level_up(self):
+        leveled = False
+
         if self.cur_exp >= self.req_exp and self.cur_exp != 0:
             if self.char_level < self.MAX_LEVEL:
                 self.level_up()
+                self.calc_stats()
+                leveled = True
+        
+        return leveled
 
     def level_up(self):
         self.cur_exp -= self.req_exp
@@ -273,8 +279,7 @@ class Entity(GameSystem):
 
         self.char_level += 1
         self.req_exp += (self.req_exp * 2)
-        self.stat_point += 1
-        self.calc_stats()
+        self.stat_point += 3
 
     def calc_stats(self):
         if type(self.char_role) == str:
