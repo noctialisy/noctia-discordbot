@@ -6,7 +6,7 @@ What you can do right now:
 - Rest and use abilities (There's a limited number of abilities, I'm expanding on them)
 - Roll dices (base ones or using your RP character if you have one)
 - Battle each other (through the use of abilities)
-- Spawn an enemy to test combat
+- Spawn an enemy (Only people that have the GM role) [Can spawn with stats or randomly]
 - Get exp by winning a fight
 
 In the future:
@@ -25,17 +25,14 @@ Available and tested commands for now:
 
 - /rp_rest -> Make your character rest (This restores HP/MP/SP and allows you to level up)
 - /rp_action -> Allow you to cast a skill on self or a target (Base skills are Attack, Defend, Heal, Pat... etc)
-- /rp_spawn_enemy -> Spawns an instance of Amalia with random generated stats. She carries (10 exp) so on win you can get points to level up your chars
+- /rp_spawn_enemy -> Spawns an Enemy either randomly or with set stats (Can only be used by GMs - People with GM role)
 
 - /roll_dice -> Roll one or more D&D dices (If you have an RP character those rolls take into account your stats, otherwise are generic)
 
 
-Next steps:
-- Currently working on database and items.
-- Battle system and skills. My idea is to allow anyone to battle anything (probably would need a confirmation or something) and use the same system for enemies and characters. This means losing to the same enemies will give that specific enemy experience and eventually will get stronger and stronger.
-- Some form of training system because of the afore mentioned
-- NPCs... I plan to procedurally generate those and they will be part of the procedurally generated locations / dungeons and such
-- Quests
+Next steps (Currently working on):
+- Database and items
+- Battle system
 
 
 More stuff will come in the future! I'll update this message as I add functionalities~ ^^
