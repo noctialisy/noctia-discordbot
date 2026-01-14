@@ -124,7 +124,7 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
         test_char = Character()
         test_char = test_char.load(user_id)
 
-        if test_char != test_char.NO_CHARACTER_FOUND_ERROR:
+        if test_char != Character().NO_CHARACTER_FOUND_ERROR:
             # Character already present
             await ctx.response.send_message(f"You already created a character with name: {test_char.get_name()}", ephemeral=True)
 
