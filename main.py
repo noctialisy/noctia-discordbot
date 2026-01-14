@@ -401,20 +401,30 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
         character = character.load(user_id)
 
         # Character exists or no (Can't do action if not exist)
-        if character != character.NO_CHARACTER_FOUND_ERROR:
+        if character != Character().NO_CHARACTER_FOUND_ERROR:
+            target_self = False
             target_user = False
 
             # If target is empty then target is self
-            if target is None or target == "":
-                target_user = True
-                target = "@" + str(user_id)
-            
             target = str(target)
 
-            if target_user:
+            if target == '':
+                target_self = True
+                target = "@" + str(user_id)
+
+            else:
+                if '<' in target:
+                    target_user = True
+                    target = target.replace('<', '').replace('>', '')
+
+            if target_self:
                 # User case
                 target_character = character
 
+            elif target_user:
+                target_character = Character()
+                target_character = target_character.load(target)
+            
             else:
                 # Enemy case
                 db_entities = character.get_entities('Enemy', target)
@@ -425,7 +435,7 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
 
                 else:
                     # Didn't find the enemy
-                    await ctx.response.send_message(character.NO_RP_CHARACTER_ERROR, ephemeral=True)
+                    await ctx.response.send_message(Character().NO_RP_CHARACTER_ERROR, ephemeral=True)
                     return
             
 
@@ -460,7 +470,7 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
                 await ctx.response.send_message(f"{action_result}", ephemeral=False)
 
         else:
-            await ctx.response.send_message(character.NO_RP_CHARACTER_ERROR, ephemeral=True)
+            await ctx.response.send_message(Character().NO_RP_CHARACTER_ERROR, ephemeral=True)
     
     
 

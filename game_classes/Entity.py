@@ -90,17 +90,17 @@ class Entity(GameSystem):
                 user_id = '@' + user_id
 
         # Search for the character in the db
-        query = f"SELECT id from Entities WHERE uid = '{str(user_id)}';"
+        query = f"SELECT id FROM Entities WHERE uid = '{user_id}';"
         self.db_cursor.execute(query)
         result = self.db_cursor.fetchall()
 
-        if result == []:
+        if len(result) == 0:
             # No char found
             # Try user file
             return self.NO_CHARACTER_FOUND_ERROR
             
         else:
-            query = f"SELECT * from Entities WHERE uid = '{str(user_id)}';"
+            query = f"SELECT * from Entities WHERE uid = '{user_id}';"
             self.db_cursor.execute(query)
             result = self.db_cursor.fetchall()
 
