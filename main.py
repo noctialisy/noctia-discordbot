@@ -75,10 +75,11 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
     # RP Section
     # =========================================================
     # RP constants
-    CHARACTER_RACES = Character.RACES
-    CHARACTER_GENDERS = Character.GENDERS
-    CHARACTER_STATS = Character.STATS
-    CHARACTER_ROLES = Character.ROLES
+    base_character = Character()
+    CHARACTER_RACES = base_character.RACES
+    CHARACTER_GENDERS = base_character.GENDERS
+    CHARACTER_STATS = base_character.STATS
+    CHARACTER_ROLES = base_character.ROLES
 
 
 

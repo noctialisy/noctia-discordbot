@@ -7,13 +7,7 @@ from .Inventory import Inventory
 from .Dice import Dice
 
 class Entity(GameSystem):
-    RACES = ["Human", "Elf", "Catfolk", "Kitsune", "Lupine", "Orc"]
-    GENDERS = ["Male", "Female"]
-    STATS = ["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"]
-    ROLES = ["Any", "Warrior", "Mage"]
-    MAX_LEVEL = 10
-
-
+    
     # =========================================================
     # INIT
     # =========================================================
