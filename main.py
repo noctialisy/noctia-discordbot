@@ -145,6 +145,7 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
             # Can create the character
             character = Character()
             character.create(name, surname, race, gender, nsfw)
+            character.set_entity_id(user_id)
             character.set_role(role)
 
             await ctx.response.send_message(
