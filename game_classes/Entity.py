@@ -132,7 +132,7 @@ class Entity(GameSystem):
         else:
             #print(f"Saving character {user_id}...")
             # Search for the character in the db
-            query = "SELECT id from Entities WHERE uid = " + str(user_id)
+            query = f"SELECT id from Entities WHERE uid = '{str(user_id)}';";
             self.db_cursor.execute(query)
             query_res = self.db_cursor.fetchall()
 
