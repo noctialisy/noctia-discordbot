@@ -69,45 +69,7 @@ class Entity(GameSystem):
     # =========================================================
     # MAINS
     # =========================================================
-    def load(self, vars):
-        self.entity_id = vars['uid']
-        self.ent_type = vars["ent_type"]
-        self.name = vars['name']
-        self.surname = vars['surname']
-        self.gender = vars['gender']
-
-        if self.gender == "Female":
-            self.pronoun_self = "her"
-        else:
-            self.pronoun_self = "his"
-
-        self.race = vars['race']
-        self.height = vars['height']
-        self.weight = vars['weight']
-        self.nsfw = vars['nsfw']
-        self.description = vars['description']
-        self.backstory = vars['backstory']
-        self.char_role = Role(vars['char_role'])
-        self.char_level = vars['char_level']
-        self.role_level = vars['role_level']
-        self.mhp = vars['mhp']
-        self.mmp = vars['mmp']
-        self.msp = vars['msp']
-        self.hp = vars['hp']
-        self.mp = vars['mp']
-        self.sp = vars['sp']
-        self.ac = vars['ac']
-        self.cur_exp = vars['cur_exp']
-        self.req_exp = vars['req_exp']
-        self.stat_point = vars['stat_point']
-        self.raw_stats = json.loads(vars['raw_stats'])
-        self.stats = json.loads(vars['stats'])
-        self.skills = json.loads(vars['skills'])
-        self.abilities = json.loads(vars['abilities'])
-        self.inventory = Inventory(json.loads(vars['inventory']))
-        self.combat_ready = vars['combat_ready']
-    
-    def load_character(self, entity, user_id: int):
+    def load(self, user_id: str):
         """
         Load the character from the database, can also check for existence
         
@@ -117,6 +79,15 @@ class Entity(GameSystem):
         :return: Character loaded if load ok, otherwise str
         :rtype: Character
         """
+
+        ent_type = self.ent_type
+
+        if type(user_id) is not str:
+            user_id = str(user_id)
+
+        if ent_type == 'Character':
+            if not user_id.startswith('@'):
+                user_id = '@' + user_id
 
         # Search for the character in the db
         query = f"SELECT id from Entities WHERE uid = '{str(user_id)}';"
@@ -133,11 +104,11 @@ class Entity(GameSystem):
             self.db_cursor.execute(query)
             result = self.db_cursor.fetchall()
 
-            entity.load(result[0])
+            self.load_data(result[0])
 
-            return entity
+            return self
 
-    def save_character(self, user_id: int, save_method = "db"):
+    def save(self, save_method = "db"):
         """
         Save the character to the database
         
@@ -146,6 +117,13 @@ class Entity(GameSystem):
         :param character: The character to save
         :type character: Character
         """
+
+        user_id = self.entity_id
+        ent_type = self.ent_type
+
+        if ent_type == 'Character':
+            if not user_id.startswith('@'):
+                user_id = '@' + user_id + ''
 
         if save_method == "file":
             with open('./game_saves/character_'+str(user_id)+'.pickle', 'wb') as file:
@@ -205,26 +183,61 @@ class Entity(GameSystem):
 
             self.db_cursor.execute(query)
 
-    def delete_character(self, user_id: int):
+    def load_data(self, vars):
+        self.entity_id = vars['uid']
+        self.ent_type = vars["ent_type"]
+        self.name = vars['name']
+        self.surname = vars['surname']
+        self.gender = vars['gender']
+
+        if self.gender == "Female":
+            self.pronoun_self = "her"
+        else:
+            self.pronoun_self = "his"
+
+        self.race = vars['race']
+        self.height = vars['height']
+        self.weight = vars['weight']
+        self.nsfw = vars['nsfw']
+        self.description = vars['description']
+        self.backstory = vars['backstory']
+        self.char_role = Role(vars['char_role'])
+        self.char_level = vars['char_level']
+        self.role_level = vars['role_level']
+        self.mhp = vars['mhp']
+        self.mmp = vars['mmp']
+        self.msp = vars['msp']
+        self.hp = vars['hp']
+        self.mp = vars['mp']
+        self.sp = vars['sp']
+        self.ac = vars['ac']
+        self.cur_exp = vars['cur_exp']
+        self.req_exp = vars['req_exp']
+        self.stat_point = vars['stat_point']
+        self.raw_stats = json.loads(vars['raw_stats'])
+        self.stats = json.loads(vars['stats'])
+        self.skills = json.loads(vars['skills'])
+        self.abilities = json.loads(vars['abilities'])
+        self.inventory = Inventory(json.loads(vars['inventory']))
+        self.combat_ready = vars['combat_ready']
+    
+    def delete(self, user_id: int):
+        user_id = self.entity_id
+        ent_type = self.ent_type
+
+        if ent_type == 'Character':
+            if not user_id.startswith('@'):
+                user_id = '@' + user_id + ''
+
         # Search for the character in the db
-        query = "SELECT id from Entities WHERE uid = " + str(user_id)
+        query = f"SELECT id from Entities WHERE ent_type = '{ent_type}' AND uid = '{user_id}';"
         self.db_cursor.execute(query)
         result = self.db_cursor.fetchall()
 
-        if result == []:
-            # No char in DB
-            # try remove char file
-            try:
-                os.remove('./game_saves/character_'+str(user_id)+'.pickle')
-
-            except Exception:
-                print(f"Character file with uid: {user_id} not found in fs.")
-
-        else:
-            query_del = ("DELETE FROM `Entities` "
-                         f"WHERE uid = \"{user_id}\";")
-
+        if result != []:
+            query_del = (f"DELETE FROM `Entities` WHERE ent_type = '{ent_type}' AND uid = '{user_id}';")
             self.db_cursor.execute(query_del)
+
     
     def describe(self):
         """
@@ -316,13 +329,13 @@ class Entity(GameSystem):
             self.combat_ready = 0
 
             if self.ent_type == "Character":
-                self.save_character(self.entity_id)
+                self.save(self.entity_id)
 
             if self.ent_type == "Enemy":
-                self.delete_character(self.entity_id)
+                self.delete(self.entity_id)
         
         else:
-            self.save_character(self.entity_id)
+            self.save(self.entity_id)
 
 
         return drops
@@ -335,7 +348,7 @@ class Entity(GameSystem):
         else:
             self.hp = total_hp_after_heal
 
-        self.save_character(self.entity_id)
+        self.save(self.entity_id)
 
     def revive(self):
         if self.hp == 0:
@@ -377,7 +390,7 @@ class Entity(GameSystem):
             else:
                 self.inventory.items['pouch'].append(item)
         
-        self.save_character(self.entity_id)
+        self.save(self.entity_id)
     
     def roll_stats(self, result_type='text'):
         dice = Dice("d6")
@@ -465,6 +478,19 @@ class Entity(GameSystem):
     # =========================================================
     # SETS
     # =========================================================
+    def set_ent_type(self, ent_type):
+        self.ent_type = ent_type
+
+    def set_entity_id(self, entity_id):
+        if type(entity_id) is not str:
+            entity_id = str(entity_id)
+
+        if self.ent_type == 'Character':
+            if not entity_id.startswith('@'):
+                entity_id = '@' + entity_id
+
+        self.entity_id = entity_id
+    
     def set_raw_stats(self, raw_stats):
         self.raw_stats = raw_stats
 

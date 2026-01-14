@@ -122,7 +122,7 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
 
         # Check if the user already has a character
         test_char = Character()
-        test_char = test_char.load_character(user_id)
+        test_char = test_char.load(user_id)
 
         if test_char != test_char.NO_CHARACTER_FOUND_ERROR:
             # Character already present
@@ -164,7 +164,7 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
             )
 
             # Save character
-            character.save_character(user_id)
+            character.save(user_id)
             await ctx.followup.send(f"Your character has been created and saved!.", ephemeral=True)
 
     
@@ -181,10 +181,10 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
 
         # Check if the user already has a character
         character = Character()
-        character = character.load_character(character, user_id)
+        character = character.load(user_id)
 
         if character != character.NO_CHARACTER_FOUND_ERROR:
-            character.delete_character(user_id)
+            character.delete(user_id)
             await ctx.response.send_message("Your character has been deleted. Now you can create a new one.", ephemeral=True)
         else:
             await ctx.response.send_message(character.NO_RP_CHARACTER_ERROR, ephemeral=True)
@@ -221,7 +221,7 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
         
         user_id = ctx.author.id
         character = Character()
-        character = character.load_character(character, user_id)
+        character = character.load(user_id)
 
         # Character existence check
         if character != character.NO_CHARACTER_FOUND_ERROR:
@@ -235,7 +235,7 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
 
             character.calc_stats()
 
-            character.save_character(user_id, character)
+            character.save(user_id)
             await ctx.response.send_message("RAW Stat composition assigned: " + str(character.get_stats()), ephemeral=True)
 
         else:
@@ -259,7 +259,7 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
         
         user_id = ctx.author.id
         character = Character()
-        character = character.load_character(character, user_id)
+        character = character.load(user_id)
 
         # Character existence check
         if character != character.NO_CHARACTER_FOUND_ERROR:
@@ -267,7 +267,7 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
             # Check if the character has the stats they want to assign
             if character.get_stat_points() >= stat_value:
                 character.set_stat(stat_value, character_stat)
-                character.save_character(user_id, character)
+                character.save(user_id)
                 await ctx.response.send_message("Character stats assigned and saved!", ephemeral=True)
 
             else:
@@ -292,35 +292,45 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
 
         if entity_id is None:
             entity_id = user_id
+            entity_id = "@" + str(user_id)
+            user_id = entity_id
 
-        character = Character()
-        character = character.load_character(character, entity_id)
+        else:
+            entity_id = str(entity_id)
+        
+        if entity_id.startswith('@'):
+            entity = Character()
 
-        if type(character) is not str:
+        else:
+            entity = Enemy()
+
+        entity = entity.load(entity_id)
+
+        if type(entity) is not str:
             #user_avatar = ctx.author.avatar
             embed = discord.Embed(
-                title=character.name + " " + character.surname,
-                description=character.description,
+                title=entity.name + " " + entity.surname,
+                description=entity.description,
                 color=discord.Color.blurple()
             )
             embed.add_field(name="Main Stats", value="")
-            embed.add_field(name="HP", value=str(character.hp) + "/" + str(character.mhp), inline=True)
-            embed.add_field(name="AC", value=str(character.ac), inline=True)
+            embed.add_field(name="HP", value=str(entity.hp) + "/" + str(entity.mhp), inline=True)
+            embed.add_field(name="AC", value=str(entity.ac), inline=True)
             #embed.add_field(name="Parameters", value="")
-            embed.add_field(name="Strength", value=character.stats['strength'], inline=True)
-            embed.add_field(name="Dexterity", value=character.stats['dexterity'], inline=True)
-            embed.add_field(name="Constitution", value=character.stats['constitution'], inline=True)
-            embed.add_field(name="Intelligence", value=character.stats['intelligence'], inline=True)
-            embed.add_field(name="Wisdom", value=character.stats['wisdom'], inline=True)
-            embed.add_field(name="Charisma", value=character.stats['charisma'], inline=True)
+            embed.add_field(name="Strength", value=entity.stats['strength'], inline=True)
+            embed.add_field(name="Dexterity", value=entity.stats['dexterity'], inline=True)
+            embed.add_field(name="Constitution", value=entity.stats['constitution'], inline=True)
+            embed.add_field(name="Intelligence", value=entity.stats['intelligence'], inline=True)
+            embed.add_field(name="Wisdom", value=entity.stats['wisdom'], inline=True)
+            embed.add_field(name="Charisma", value=entity.stats['charisma'], inline=True)
             embed.add_field(name="Backstory", value="Is empty in here for now...")
             embed.set_author(name="RP Char card")
 
             await ctx.response.send_message("Here's your character card!", embed=embed, ephemeral=silent)
 
-            if entity_id == user_id and character.has_unspent_stats() == True:
-                stat_points = character.get_stat_points()
-                raw_stat_points = character.get_raw_stats()
+            if entity_id == user_id and entity.has_unspent_stats() == True:
+                stat_points = entity.get_stat_points()
+                raw_stat_points = entity.get_raw_stats()
                 raw_stat_explain_string = ""
 
                 await ctx.followup.send(
@@ -333,7 +343,7 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
 
 
         else:
-            await ctx.response.send_message(character, ephemeral=False)
+            await ctx.response.send_message(entity, ephemeral=False)
 
 
 
@@ -348,12 +358,12 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
     async def rp_rest(ctx, silent=False):
         user_id = ctx.author.id
         character = Character()
-        character = character.load_character(character, user_id)
+        character = character.load(user_id)
 
         # Character existence check
         if character != character.NO_CHARACTER_FOUND_ERROR:
             character.rest()
-            character.save_character(user_id, character)
+            character.save(user_id)
 
             if character.pronoun_self == 'her':
                 pron = 'she'
@@ -378,26 +388,42 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
         guild_ids=[discord_main_guild_id]
     )
     @option("ability_name", description="The action you want to perform (Most basic is \"Attack\")")
-    @option("target", description="The target of the action (Optional - Depends on action)")
-    async def rp_action(ctx, ability_name: str, target):
+    @option("target", description="The target of the action (Depends on action - Empty = Self)")
+    async def rp_action(ctx, ability_name: str, target=None):
         user_id = ctx.author.id
         character = Character()
-        character = character.load_character(character, user_id)
+        character = character.load(user_id)
 
+        # Character exists or no (Can't do action if not exist)
         if character != character.NO_CHARACTER_FOUND_ERROR:
-            target = str(target).replace("@", "").replace("<", "").replace(">", "")
+            target_user = False
 
-            get_user_entities = character.get_entities('Character', target)
-            get_enemy_entities = character.get_entities('Enemy', target)
+            # If target is empty then target is self
+            if target is None or target == "":
+                target_user = True
+                target = "@" + str(user_id)
+            
+            target = str(target)
 
-            if get_user_entities != []:
-                target_character = Character()
+            if target_user:
+                # User case
+                target_character = character
 
-            if get_enemy_entities != []:
-                target_character = Enemy()
+            else:
+                # Enemy case
+                db_entities = character.get_entities('Enemy', target)
 
-            # Find the enemy
-            target_character = target_character.load_character(target_character, target)
+                if db_entities != []:
+                    target_character = Enemy()
+                    target_character = target_character.load(target)
+
+                else:
+                    # Didn't find the enemy
+                    await ctx.response.send_message(character.NO_RP_CHARACTER_ERROR, ephemeral=True)
+                    return
+            
+
+            # Get the skill
             character_ability_res = character.use_ability(ability_name, [target_character])
 
             if type(character_ability_res) == str:
@@ -440,7 +466,7 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
         user_id = ctx.author.id
 
         # Create a new enemy
-        enemy_id = 0
+        enemy_id = 1
         enemy = Enemy()
 
         # Find a new id
@@ -455,8 +481,9 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
         
 
         enemy = enemy.create('Amelia', None, 'Female')
+        enemy.set_entity_id(str(enemy_id))
         enemy.rest()
-        enemy.save_character(enemy_id)
+        enemy.save(enemy_id)
         embed = discord.Embed(
             title=enemy.name + " id: " + str(enemy.entity_id),
             description=enemy.description,
@@ -489,7 +516,7 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
 
         dice = Dice(dice_type)
         character = Character()
-        character = character.load_character(character, user_id)
+        character = character.load(user_id)
         result = []
 
         if character != character.NO_CHARACTER_FOUND_ERROR:

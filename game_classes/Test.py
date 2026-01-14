@@ -107,12 +107,13 @@ class Test:
         print('## DB test pass!')
 
     # Test the character class
-    def test_character(self, uid=50, name='Test', surname='Test', race='Human', gender='Female', role='Mage', nsfw=True):
+    def test_character(self, uid='50', name='Test', surname='Test', race='Human', gender='Female', role='Mage', nsfw=True):
         print('## Character test start ===')
         try:
             # Create Character
             character = Character()
             creation_result = character.create(name, surname, race, gender, nsfw)
+            character.set_entity_id(uid)
 
             if 'Creating failed' in creation_result:
                 raise Exception('## Character creation failed! ' + str(creation_result))
@@ -151,12 +152,15 @@ class Test:
                 value = getattr(character, key)
                 saved_char_data[key] = value
 
-
-            self.game_system.save_character(uid, character)
+            character.set_entity_id(uid)
+            character.save(uid)
 
             # Load Character
-            new_character = self.game_system.load_character(uid)
+            new_character = Character()
+            new_character.set_entity_id(uid)
+            new_character = new_character.load(uid)
             character_data = vars(new_character)
+
             loaded_char_data = {}
             for key in character_data.keys():
                 value = getattr(new_character, key)
@@ -171,6 +175,13 @@ class Test:
 
             saved_char_data['inventory'] = saved_char_data['inventory'].print()
             loaded_char_data['inventory'] = loaded_char_data['inventory'].print()
+
+            saved_char_data['settings'] = ''
+            loaded_char_data['settings'] = ''
+            saved_char_data['db_connection'] = ''
+            loaded_char_data['db_connection'] = ''
+            saved_char_data['db_cursor'] = ''
+            loaded_char_data['db_cursor'] = ''
 
 
             if saved_char_data != loaded_char_data:
@@ -201,10 +212,10 @@ class Test:
                 print("## Ability cast result: " + str(ability_use_result))
             
             # Check user search
-            self.game_system.get_user_entities(uid)
+            self.game_system.get_entities(uid)
 
             # Delete character
-            self.game_system.delete_character(uid)
+            character.delete(uid)
 
         
         except Exception as e:
