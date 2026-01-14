@@ -466,7 +466,7 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
         user_id = ctx.author.id
 
         # Create a new enemy
-        enemy_id = 1
+        enemy_id = 0
         enemy = Enemy()
 
         # Find a new id
