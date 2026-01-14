@@ -471,8 +471,19 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
         description="Spawns a random enemy",
         guild_ids=[discord_main_guild_id]
     )
-    async def rp_enemy_spawn(ctx):
+    @option("name", description="Enemy name")
+    @option("race", description="Enemy race", autocomplete=get_character_races)
+    @option("gender", description="Enemy gender", autocomplete=get_character_genders)
+    @option("role", description="Enemy role (Class / Job)", autocomplete=get_character_roles)
+    @option("nsfw", description="Is your character nsfw or sfw (assumed: sfw)")
+    async def rp_enemy_spawn(ctx, name = None, race = None, gender = None, role = None, nsfw = False):
+        author = ctx.author
         user_id = ctx.author.id
+        gm_role = discord.utils.find(lambda r: r.name == 'GM', ctx.guild.roles)
+        
+        if gm_role not in author.roles:
+            await ctx.response.send_message("You are not a GM so can't spawn enemies!.", ephemeral=False)
+            return
 
         # Create a new enemy
         enemy_id = 0
@@ -487,9 +498,8 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
                     enemy_id = int(db_enemy['uid'])
 
         enemy_id += 1
-        
 
-        enemy = enemy.create('Amelia', None, 'Female')
+        enemy = enemy.create(name, race, gender, role, nsfw)
         enemy.set_entity_id(str(enemy_id))
         enemy.rest()
         enemy.save(enemy_id)

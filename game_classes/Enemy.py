@@ -24,6 +24,10 @@ class Enemy(Entity):
     # =========================================================
     def create(self, name: str, race = None, gender = None, role = None, nsfw = False):
         self.ent_type = "Enemy"
+        
+        if type(name) is not str:
+            name = 'Amelia'
+
         self.name = name
         self.surname = ""
 
@@ -54,7 +58,7 @@ class Enemy(Entity):
         self.race = race
         self.gender = gender
         self.nsfw = nsfw
-        
+
         self.set_role(role)
 
         if self.gender == "Female":
@@ -99,6 +103,9 @@ class Enemy(Entity):
         role_sub_stat = self.char_role.get_sub_stat()
 
         for stat in self.STATS:
+            if stat == 'luck':
+                continue
+
             if stat == role_main_stat:
                 stat_index = 0
             elif stat == role_sub_stat:
