@@ -308,9 +308,14 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
         entity = entity.load(entity_id)
 
         if type(entity) is not str:
+            if entity.ent_type == 'Character':
+                title = entity.name + " " + entity.surname
+            else:
+                title = entity.name + " entity_id: " + entity.entity_id
+
             #user_avatar = ctx.author.avatar
             embed = discord.Embed(
-                title=entity.name + " " + entity.surname,
+                title=title,
                 description=entity.description,
                 color=discord.Color.blurple()
             )
@@ -329,7 +334,7 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
 
             await ctx.response.send_message("Here's your character card!", embed=embed, ephemeral=silent)
 
-            if entity_id == user_id and entity.has_unspent_stats() == True:
+            if entity.ent_type == 'Character' and entity.has_unspent_stats() == True:
                 stat_points = entity.get_stat_points()
                 raw_stat_points = entity.get_raw_stats()
                 raw_stat_explain_string = ""
