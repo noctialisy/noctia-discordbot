@@ -29,16 +29,13 @@ class Enemy(Entity):
 
         # Fills the blanks
         if race is None:
-            race = random.randint(0, len(self.RACES) - 1)
-            race = self.RACES[race]
+            race = self.RACES[random.randint(0, len(self.RACES) - 1)]
 
         if gender is None:
-            gender = random.randint(0, len(self.GENDERS) - 1)
-            gender = self.GENDERS[gender]
+            gender = self.GENDERS[random.randint(0, len(self.GENDERS) - 1)]
 
         if role is None:
-            role = random.randint(0, len(self.ROLES) - 1)
-            role = self.ROLES[role]
+            role = self.ROLES[random.randint(0, len(self.ROLES) - 1)]
             
             if role == 'Any':
                 role = 'Warrior'
@@ -56,8 +53,9 @@ class Enemy(Entity):
         # Create the enemy
         self.race = race
         self.gender = gender
-        self.role = self.set_role(role)
         self.nsfw = nsfw
+        
+        self.set_role(role)
 
         if self.gender == "Female":
             self.pronoun_self = "her"
@@ -87,20 +85,31 @@ class Enemy(Entity):
             self.tag = "Epic Legendary"
 
         self.description = f"{race} {role} [{self.tag}]"
-        sample = random.sample([0, 1, 2, 3, 4, 5], 6)
 
-        # ToDo: This would have to be improved by Race / Job
-        self.set_raw_stat(sample[0], "strength", False)
-        self.set_raw_stat(sample[1], "constitution", False)
-        self.set_raw_stat(sample[2], "dexterity", False)
-        self.set_raw_stat(sample[3], "wisdom", False)
-        self.set_raw_stat(sample[4], "intelligence", False)
-        self.set_raw_stat(sample[5], "charisma", False)
-        self.set_raw_stat(0, "", True)
-
+        self.assign_stat_order()
         self.calc_stats()
 
         return self
+    
+    # Pick a 2 stat preference based on Job
+    def assign_stat_order(self):
+        sample = random.sample([2, 3, 4, 5], 4)
+        sample_index = 0
+        role_main_stat = self.char_role.get_main_stat()
+        role_sub_stat = self.char_role.get_sub_stat()
+
+        for stat in self.STATS:
+            if stat == role_main_stat:
+                stat_index = 0
+            elif stat == role_sub_stat:
+                stat_index = 1
+            else:
+                stat_index = sample[sample_index]
+                sample_index += 1
+
+            self.set_raw_stat(stat_index, stat, False)
+
+        self.set_raw_stat(0, "", True)
     
     def test(self):
         pass

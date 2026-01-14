@@ -444,7 +444,7 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
                     result = ability_result[0][1]
                     lines = ability_result[1]
 
-                    if result == "success":
+                    if result == "success" or result == "success_win":
                         action_result = action_result + "  - " + lines["success"] + "\n"
 
                     elif result == "fail":
@@ -452,6 +452,9 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
                     
                     else:
                         action_result = action_result + "  - " + target_name + " Cannot continue to fight...\n"
+
+                    if result == "success_win":
+                        action_result = action_result + "  - " + target_name + " was defeated!\n"
 
                 # Print the action results
                 await ctx.response.send_message(f"{action_result}", ephemeral=False)

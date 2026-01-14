@@ -9,6 +9,8 @@ class Role(GameSystem):
     role_hit_dice = ""
     role_magic_dice = ""
     role_special_dice = ""
+    role_main_stat = ""
+    role_sub_stat = ""
     role_abilities = []
 
     NO_DB_DATA_ERROR = "No data found"
@@ -22,7 +24,7 @@ class Role(GameSystem):
     def __init__(self, role_name :str):
         super().__init__()
 
-        self.ROLES = self.get_role_names()
+        self.ROLES = self.get_db_role_names()
 
         if self.ROLES == self.NO_DB_DATA_ERROR:
             print("Role class had a db fetching error!")
@@ -30,10 +32,18 @@ class Role(GameSystem):
 
         if role_name in self.ROLES:
             self.role_name = role_name
-            self.role_hit_dice = self.get_role_hit_dice(self.role_name)
-            self.role_magic_dice = self.get_role_magic_dice(self.role_name)
-            self.role_special_dice = self.get_role_special_dice(self.role_name)
-            self.role_abilities = self.get_role_abilities(self.role_name)
+
+            query = f"SELECT * FROM Roles WHERE name = '{role_name}';"
+            self.db_cursor.execute(query)
+            result = self.db_cursor.fetchall()
+
+            self.role_hit_dice = result[0]['hit_dice']
+            self.role_magic_dice = result[0]['magic_dice']
+            self.role_special_dice = result[0]['special_dice']
+            self.role_main_stat = result[0]['main_stat']
+            self.role_sub_stat = result[0]['sub_stat']
+            self.role_abilities = self.get_db_role_abilities(role_name)
+
         else:
             print("Role class had a db fetching error!")
             self.role_name = "Not Init"
@@ -141,11 +151,13 @@ class Role(GameSystem):
                     # Calc dmg
                     dmg = entity.roll_dice("d10")
                     drops = target.apply_dmg(dmg[0])
+                    action_res_string = 'success'
 
                     if drops != {}:
                         entity.loot_items(drops)
+                        action_res_string = 'success_win'
 
-                    action_results.append([target.name, 'success', dmg])
+                    action_results.append([target.name, action_res_string, dmg])
                 
                 else:
                     action_results.append([target.name, 'fail', 0])
@@ -181,7 +193,28 @@ class Role(GameSystem):
     # =========================================================
     # Gets
     # =========================================================
-    def get_role_names(self):
+    def get_name(self):
+        return self.role_name
+    
+    def get_hit_dice(self):
+        return self.role_hit_dice
+    
+    def get_magic_dice(self):
+        return self.role_magic_dice
+    
+    def get_special_dice(self):
+        return self.role_special_dice
+    
+    def get_main_stat(self):
+        return self.role_main_stat
+    
+    def get_sub_stat(self):
+        return self.role_sub_stat
+    
+    def get_abilities(self):
+        return self.role_abilities
+    
+    def get_db_role_names(self):
         query = "SELECT name FROM Roles;"
         self.db_cursor.execute(query)
         result = self.db_cursor.fetchall()
@@ -194,7 +227,7 @@ class Role(GameSystem):
             data = map(lambda row: row['name'], result)
             return list(data)
 
-    def get_role_hit_dice(self, role_name):
+    def get_db_role_hit_dice(self, role_name):
         query = f"SELECT hit_dice FROM Roles WHERE name = \"{role_name}\";"
         self.db_cursor.execute(query)
         result = self.db_cursor.fetchall()
@@ -206,7 +239,7 @@ class Role(GameSystem):
             data = map(lambda row: row['hit_dice'], result)
             return list(data)[0]
         
-    def get_role_magic_dice(self, role_name):
+    def get_db_role_magic_dice(self, role_name):
         query = f"SELECT magic_dice FROM Roles WHERE name = \"{role_name}\";"
         self.db_cursor.execute(query)
         result = self.db_cursor.fetchall()
@@ -218,7 +251,7 @@ class Role(GameSystem):
             data = map(lambda row: row['magic_dice'], result)
             return list(data)[0]
         
-    def get_role_special_dice(self, role_name):
+    def get_db_role_special_dice(self, role_name):
         query = f"SELECT special_dice FROM Roles WHERE name = \"{role_name}\";"
         self.db_cursor.execute(query)
         result = self.db_cursor.fetchall()
@@ -230,7 +263,7 @@ class Role(GameSystem):
             data = map(lambda row: row['special_dice'], result)
             return list(data)[0]
     
-    def get_role_abilities(self, role_name):
+    def get_db_role_abilities(self, role_name):
         any_role = "Any"
         query = f"SELECT * FROM Abilities WHERE role_name = \"{role_name}\" OR role_name = \"{any_role}\";"
         self.db_cursor.execute(query)

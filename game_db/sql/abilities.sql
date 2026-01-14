@@ -1,18 +1,20 @@
-CREATE TABLE Abilities (
-	id INTEGER PRIMARY KEY AUTOINCREMENT,
-	role_id INTEGER,
-	role_name TEXT,
-	name TEXT,
-	description TEXT,
-	description_ext TEXT,
-	usage_line_cast TEXT,
-	usage_line_success TEXT,
-	usage_line_fail TEXT,
-	req_role TEXT,
-	req_level INTEGER,
-	req_hp INTEGER,
-	req_mp INTEGER,
-	req_sp INTEGER,
-	positive_effects TEXT,
-	negative_effects TEXT
-)
+CREATE TABLE `Abilities` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `role_id` int(11) DEFAULT NULL,
+  `role_name` text DEFAULT NULL,
+  `name` text DEFAULT NULL,
+  `type` text DEFAULT NULL,
+  `description` text DEFAULT NULL,
+  `description_ext` text DEFAULT NULL,
+  `usage_line_cast` text DEFAULT NULL,
+  `usage_line_success` text DEFAULT NULL,
+  `usage_line_fail` text DEFAULT NULL,
+  `req_role` text DEFAULT NULL,
+  `req_level` int(11) DEFAULT NULL,
+  `req_hp` int(11) DEFAULT NULL,
+  `req_mp` int(11) DEFAULT NULL,
+  `req_sp` int(11) DEFAULT NULL,
+  `positive_effects` text DEFAULT NULL,
+  `negative_effects` text DEFAULT NULL,
+  PRIMARY KEY (`id`)
+);
