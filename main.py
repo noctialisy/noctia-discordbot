@@ -300,7 +300,11 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
         else:
             entity_id = str(entity_id)
         
-        if entity_id.startswith('@'):
+        if entity_id.startswith('<'):
+            entity_id = str(entity_id).replace('<', '').replace('>', '')
+            entity = Character()
+
+        elif entity_id.startswith('@'):
             entity = Character()
 
         else:
