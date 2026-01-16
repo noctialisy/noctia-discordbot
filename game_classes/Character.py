@@ -63,3 +63,53 @@ class Character(Entity):
 
         return "Creation: success!"
     
+
+    # Equipment handle
+    def equip_item(self, equip_type, equip_index):
+        equipment = self.inventory.get_items()['equipment']
+        
+        if equip_type in equipment.keys():
+            try:
+                result = self.remove_equip(equip_type)
+
+                if type(result) != bool:
+                    raise Exception(result)
+
+            except Exception as e:
+                return e
+
+            equip = self.inventory.items['pouch'].pop(equip_index)
+            self.inventory.items['equipment'][equip_type] = equip
+
+            self.calc_stats()
+            self.save(self.entity_id)
+
+        else:
+            return "Inventory slot doesn't exist!"
+
+
+    def remove_equip(self, equip_type):
+        equipment = self.inventory.items['equipment']
+        pouch = self.inventory.items['pouch']
+
+        if len(pouch) >= self.inventory.get_max_slots():
+            return "Inventory is full!"
+
+        if equip_type in equipment.keys():
+            equip = self.inventory.get_items()['equipment'][equip_type]
+
+            if equip['name'] != 'Bare hands' and equip['name'] != 'Empty':
+                self.inventory.items['pouch'].append(equip)
+
+            self.inventory.items['equipment'][equip_type] = self.set_default_equip(equip_type)
+
+            self.calc_stats()
+            self.save(self.entity_id)
+
+            return True
+
+        else:
+            return "Inventory slot doesn't exist!"
+        
+    def get_items(self):
+        return self.inventory.get_items()

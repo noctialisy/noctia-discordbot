@@ -545,3 +545,16 @@ class Entity(GameSystem):
             setattr(self, key, value)
         
         print(f"Set Character {key} to {value}")
+
+    def set_default_equip(self, equip_type):
+        equipment = self.inventory.items['equipment']
+
+        if equip_type in equipment.keys():
+            equip = ""
+
+            if equip_type == 'main_weapon':
+                equip = {"id": 1, "name": "Bare hands", "description": "", "attack_type": "melee", "dice_roll": "1d4"}
+            else:
+                equip = {"id": 0, "name": "Empty", "description": "", "effects": ""}
+
+            self.inventory.items['equipment'][equip_type] = equip
