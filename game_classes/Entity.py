@@ -466,13 +466,14 @@ class Entity(GameSystem):
     
     def get_modifier(self, stat_name: str):
         if stat_name in self.STATS:
-            # Modifier = (Ability Score - 10) / 2 (rounded down
+            # Modifier = (Ability Score - 10) / 2 (rounded down)
             return round((self.stats[stat_name] - 10) / 2)
 
     def get_combat_ready(self):
         return self.combat_ready
     
-
+    def get_weapon(self):
+        return self.inventory.get_items()['equipment']['main_weapon']
     
     # =========================================================
     # SETS

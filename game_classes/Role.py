@@ -84,16 +84,18 @@ class Role(GameSystem):
             trg_entities = [entity]
         
         # Use ability
-        ability_type = ability['type']
+        ability_class = ability['type'].split('_')[0]
+        ability_type = ability['type'].split('_')[1]
         ability_lines = {
             "cast": ability['usage_line_cast'],
             "success": ability['usage_line_success'],
             "fail": ability['usage_line_fail']
         }
+        ability_roll = ability['dice_roll']
 
         for key, value in ability_lines.items():
             ability_lines[key] = str(ability_lines[key]).replace('{entity_name}', entity.name)
-            ability_lines[key] = str(ability_lines[key]).replace('{main_weapon}', entity.inventory.items['equipment']["main_weapon"])
+            ability_lines[key] = str(ability_lines[key]).replace('{main_weapon}', entity.inventory.items['equipment']["main_weapon"]['name'].lower())
             ability_lines[key] = str(ability_lines[key]).replace('{pronoun_self}', entity.pronoun_self)
 
         calc_results = []
@@ -101,12 +103,12 @@ class Role(GameSystem):
 
         if ability_type == 'heal':
             # Perform Heal
-            calc_results = self.calculate_heal(entity, trg_entities)
+            calc_results = self.calculate_heal(entity, trg_entities, ability_class, ability_roll)
 
         else:
             # Perform Attack
             # # Attack check [] || [result, [dmg]]
-            calc_results = self.calculate_dmg(entity, trg_entities)
+            calc_results = self.calculate_dmg(entity, trg_entities, ability_class, ability_roll)
 
         for result in calc_results:
             # Replace target names
@@ -129,7 +131,7 @@ class Role(GameSystem):
         return action_results
 
     # Handle dmg
-    def calculate_dmg(self, entity, entity_targets=[]):
+    def calculate_dmg(self, entity, entity_targets=[], ability_class="melee", ability_roll=""):
         action_results = []
 
         if type(entity_targets) is not list:
@@ -138,19 +140,52 @@ class Role(GameSystem):
 
         # There's an enemy entity
         if entity_targets != []:
+            # Check ability class
+            if ability_class == "melee":
+                entity_modifier = entity.get_modifier('strength')
+
+            elif ability_class == 'ranged' or ability_class == 'finesse':
+                entity_modifier = entity.get_modifier('dexterity')
+
+            else:
+                entity_modifier = entity.get_modifier(entity.get_role().get_main_stat())
 
             # Calculate dmg for all targets
             for target in entity_targets:
                 target_ac = target.ac
-                entity_roll = entity.roll_dice("d20")[0]
+                entity_roll = entity.roll_dice('d20')[0] + entity_modifier
+                print(entity.name + " Rolled Attack Check: " + str(entity_roll) + " Modifier: " + str(entity_modifier))
 
                 if target.get_combat_ready() == 0:
                     action_results.append([target.name, 'fail_dead', 0])
 
-                elif entity_roll > target_ac:
-                    # Calc dmg
-                    dmg = entity.roll_dice("d10")
-                    drops = target.apply_dmg(dmg[0])
+                elif entity_roll >= target_ac:
+                    skill_dmg_result = 0
+
+                    # Calc ability dmg
+                    if ability_roll != '':
+                        ability_roll = ability_roll.split(',')
+                        skill_dmg_result = 0
+
+                        for dice in ability_roll:
+                            dice_quantity = dice.split('d')[0]
+                            dice_type = dice.split('d')[1]
+                            skill_dmg_result += sum(entity.roll_dice('d'+dice_type, int(dice_quantity)))
+
+                    # Calc weapon dmg
+                    weap_dmg_result = 0
+                    weap = entity.get_weapon()
+                    weap_roll = weap['dice_roll'].split(',')
+
+                    for dice in weap_roll:
+                        dice_quantity = dice.split('d')[0]
+                        dice_type = dice.split('d')[1]
+                        weap_dmg_result += sum(entity.roll_dice('d'+dice_type, int(dice_quantity)))
+
+                    # Final dmg apply
+                    dmg = skill_dmg_result + weap_dmg_result + entity_modifier
+                    print(entity.name + " Damaged for: " + str(dmg) + " Rolls: " + str(skill_dmg_result) + " Skill + " + str(entity_modifier) + " modifier")
+                    drops = target.apply_dmg(dmg)
                     action_res_string = 'success'
 
                     if drops != {}:
@@ -169,7 +204,7 @@ class Role(GameSystem):
         return action_results
     
     # Handle heals
-    def calculate_heal(self, entity, entity_targets=[]):
+    def calculate_heal(self, entity, entity_targets=[], ability_class="melee", ability_roll=""):
         action_results = []
 
         if type(entity_targets) is not list:
@@ -177,10 +212,36 @@ class Role(GameSystem):
             entity_targets = [entity]
         
         if entity_targets != []:
+
             # Heal all targets
             for target in entity_targets:
-                heal_amt = entity.roll_dice('d20')
-                target.apply_heal(heal_amt[0])
+
+                # Roll skill dmg
+                skill_dmg_result = 0
+
+                if ability_roll != '':
+                    ability_roll = ability_roll.split(',')
+                    skill_dmg_result = 0
+
+                    for dice in ability_roll:
+                        dice_quantity = dice.split('d')[0]
+                        dice_type = dice.split('d')[1]
+                        skill_dmg_result += sum(entity.roll_dice('d'+dice_type, int(dice_quantity)))
+
+                # Check ability class
+                if ability_class == "melee":
+                    entity_modifier = entity.get_modifier('strength')
+
+                elif ability_class == 'ranged' or ability_class == 'finesse':
+                    entity_modifier = entity.get_modifier('dexterity')
+
+                else:
+                    entity_modifier = entity.get_modifier(entity.get_role().get_main_stat())
+
+                # Perform Heal
+                heal_amt = skill_dmg_result + entity_modifier
+                print(entity.name + " Healed for: " + str(heal_amt) + " Rolls: " + str(skill_dmg_result) + " Skill + " + str(entity_modifier) + " modifier")
+                target.apply_heal(heal_amt)
                 action_results.append([target.name, 'success', heal_amt])
 
         else:

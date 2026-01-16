@@ -27,8 +27,6 @@ If you want to use the bot / game for your own server, contact me.
       1 with test data (suggested a duplicate of your game db, if you're starting you can use your production schema)
 
 
-
-
 ## What you can do right now:
   - Create your RP character (supports only one per server member, can create more tho)
   - Assign your stats after the initial D&D stat rolls
@@ -45,7 +43,8 @@ If you want to use the bot / game for your own server, contact me.
   - Having the lore from my wiki expanded and added into the game
   - Allowing people to start threads for their RP sessions (adventures)
   - Generating stories using AI (at first until I can write down an algorithm to procedurally generate things)
-  - Eventually (probably) releasing the bot to the public so people will have their D&D game engine for D&D based games that can run in discord, a browser or a standalone game app.
+  - Eventually (probably) releasing the bot to the public so people will have their D&D game engine for D&D based games that can run in discord, a browser or a standalone game app
+  - Splitting the game code and the bot so that the game can be ported elsewhere
 
   Currently working on:
     - Database and items

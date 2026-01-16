@@ -12,7 +12,7 @@ class Inventory:
                 "exp": 10,
                 "gold": 0,
                 "equipment": {
-                    "main_weapon": "Default Weapon",
+                    "main_weapon": {"id": 1, "name": "Bare hands", "description": "", "attack_type": "melee", "dice_roll": "1d4"},
                     "sub_weapon": "",
                     "head": "",
                     "chest": "",

@@ -6,6 +6,7 @@ CREATE TABLE `Abilities` (
   `type` text DEFAULT NULL,
   `description` text DEFAULT NULL,
   `description_ext` text DEFAULT NULL,
+  `dice_roll` text DEFAULT NULL,
   `usage_line_cast` text DEFAULT NULL,
   `usage_line_success` text DEFAULT NULL,
   `usage_line_fail` text DEFAULT NULL,
