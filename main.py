@@ -486,7 +486,8 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
     )
     @option("ability_name", description="The action you want to perform (Most basic is \"Attack\")")
     @option("target", description="The target of the action (Depends on action - Empty = Self)")
-    async def rp_action(ctx, ability_name: str, target=None):
+    @option("hide_rolls", description="If you want the rolls ro show or no, (Default = False)")
+    async def rp_action(ctx, ability_name: str, target=None, hide_rolls = False):
         user_id = ctx.author.id
         character = Character()
         character = character.load(user_id)
@@ -543,7 +544,11 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
                 for ability_result in character_ability_res:
                     target_name = ability_result[0][0]
                     result = ability_result[0][1]
+                    roll_explain = ability_result[0][3]
                     lines = ability_result[1]
+
+                    if roll_explain != '' and hide_rolls == False:
+                        action_result = action_result + "\n" + roll_explain + "\n"
 
                     if result == "success" or result == "success_win":
                         action_result = action_result + "  - " + lines["success"] + "\n"

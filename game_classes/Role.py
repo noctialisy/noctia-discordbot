@@ -139,6 +139,7 @@ class Role(GameSystem):
     # Handle dmg
     def calculate_dmg(self, entity, entity_targets=[], ability_class="melee", ability_roll=""):
         action_results = []
+        roll_explains = ''
 
         if type(entity_targets) is not list:
             # Target self if no target
@@ -160,7 +161,9 @@ class Role(GameSystem):
             for target in entity_targets:
                 target_ac = target.ac
                 entity_roll = entity.roll_dice('d20')[0] + entity_modifier
-                print(entity.name + " Rolled Attack Check: " + str(entity_roll) + " Modifier: " + str(entity_modifier))
+
+                roll_explains = "-# " + entity.name + " Rolls for the Attack Check: " + str(entity_roll) + " + Modifier: " + str(entity_modifier)
+                entity_roll = entity_roll + entity_modifier
 
                 if target.get_combat_ready() == 0:
                     action_results.append([target.name, 'fail_dead', 0])
@@ -190,7 +193,9 @@ class Role(GameSystem):
 
                     # Final dmg apply
                     dmg = skill_dmg_result + weap_dmg_result + entity_modifier
-                    print(entity.name + " Damaged for: " + str(dmg) + " Rolls: " + str(skill_dmg_result) + " Skill + " + str(entity_modifier) + " modifier")
+                    roll_explains = roll_explains + "\n" + "-# " + entity.name + " Rolls damage for: " + str(dmg) + "! " + str(skill_dmg_result) + " Skill + " + str(weap_dmg_result) + " Weapon + " + str(entity_modifier) + " Modifier"
+                    
+                    print(roll_explains)
                     drops = target.apply_dmg(dmg)
                     action_res_string = 'success'
 
@@ -198,13 +203,13 @@ class Role(GameSystem):
                         entity.loot_items(drops)
                         action_res_string = 'success_win'
 
-                    action_results.append([target.name, action_res_string, dmg])
+                    action_results.append([target.name, action_res_string, dmg, roll_explains])
                 
                 else:
-                    action_results.append([target.name, 'fail', 0])
+                    action_results.append([target.name, 'fail', 0, roll_explains])
 
         else:
-            action_results = [['empty', 'fail', [0]]]
+            action_results = [['empty', 'fail', 0, roll_explains]]
 
 
         return action_results
@@ -212,6 +217,7 @@ class Role(GameSystem):
     # Handle heals
     def calculate_heal(self, entity, entity_targets=[], ability_class="melee", ability_roll=""):
         action_results = []
+        roll_explains = ''
 
         if type(entity_targets) is not list:
             # Target self if no entity provided
@@ -246,12 +252,14 @@ class Role(GameSystem):
 
                 # Perform Heal
                 heal_amt = skill_dmg_result + entity_modifier
-                print(entity.name + " Healed for: " + str(heal_amt) + " Rolls: " + str(skill_dmg_result) + " Skill + " + str(entity_modifier) + " modifier")
+                roll_explains = "-# " + entity.name + " Rolls heal for: " + str(heal_amt) + "! " + str(skill_dmg_result) + " Skill + " + str(entity_modifier) + " Modifier"
+                
+                print(roll_explains)
                 target.apply_heal(heal_amt)
-                action_results.append([target.name, 'success', heal_amt])
+                action_results.append([target.name, 'success', heal_amt, roll_explains])
 
         else:
-            action_results = [['empty', 'fail', [0]]]
+            action_results = [['empty', 'fail', 0, roll_explains]]
 
         return action_results
 
