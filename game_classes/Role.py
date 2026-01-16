@@ -84,17 +84,20 @@ class Role(GameSystem):
             trg_entities = [entity]
         
         # Use ability
-        ability_class = ability['type'].split('_')[0]
-        ability_type = ability['type'].split('_')[1]
+        if ability['type'] == '':
+            ability_class = entity.inventory.items['equipment']["main_weapon"]['attack_type']
+            ability_type = 'physical'
+
+        else:
+            ability_class = ability['type'].split('_')[0]
+            ability_type = ability['type'].split('_')[1]
+
         ability_lines = {
             "cast": ability['usage_line_cast'],
             "success": ability['usage_line_success'],
             "fail": ability['usage_line_fail']
         }
         ability_roll = ability['dice_roll']
-
-        if ability_class == '':
-            ability_class = entity.inventory.items['equipment']["main_weapon"]['attack_type']
 
         for key, value in ability_lines.items():
             ability_lines[key] = str(ability_lines[key]).replace('{entity_name}', entity.name)
