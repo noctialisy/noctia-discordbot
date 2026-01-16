@@ -93,6 +93,9 @@ class Role(GameSystem):
         }
         ability_roll = ability['dice_roll']
 
+        if ability_class == '':
+            ability_class = entity.inventory.items['equipment']["main_weapon"]['attack_type']
+
         for key, value in ability_lines.items():
             ability_lines[key] = str(ability_lines[key]).replace('{entity_name}', entity.name)
             ability_lines[key] = str(ability_lines[key]).replace('{main_weapon}', entity.inventory.items['equipment']["main_weapon"]['name'].lower())
