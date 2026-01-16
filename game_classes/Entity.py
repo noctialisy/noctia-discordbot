@@ -386,8 +386,10 @@ class Entity(GameSystem):
 
             elif key == "gold":
                 self.inventory.items["gold"] += item
+
             else:
-                self.inventory.items['pouch'].append(item)
+                if len(self.inventory.items['pouch']) < self.inventory.get_max_slots():
+                    self.inventory.items['pouch'].append(item)
         
         self.save(self.entity_id)
     
