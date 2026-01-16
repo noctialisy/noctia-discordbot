@@ -516,7 +516,7 @@ class Entity(GameSystem):
         self.char_level = level
 
     def set_exp(self, exp: int):
-        self.cur_exp = exp
+        self.cur_exp += exp
 
     def set_req_exp(self, exp: int):
         self.req_exp = exp
