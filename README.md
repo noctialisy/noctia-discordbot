@@ -15,7 +15,7 @@ If you want to use the bot / game for your own server, contact me.
 Before running the bot remember to:
 - Fill in the settings_example.json file
 - Rename settings_example.json to settings.json
-- Create a database (MariaDB works better) using the base query in game_db/example.sql
+- Create a database (MariaDB works better) using the base queries in the game_db/ folder
 
 If you're building for docker / kubernetes there's included a dockerfile for the image and a k8s file for docker.
 You can generate the ready files by using the command python handle.py build (Need to fill settings.json first)
@@ -23,7 +23,7 @@ You can generate the ready files by using the command python handle.py build (Ne
 Optional - There's included a Test.py class to run some minimal game test (doesn't test the discord part for now)
 You can run a test before releasing / running the bot with python test.py (test is fully automated)
 Test requires 2 databases:
-- 1 with the table structure from game_db/example.sql (for checks)
+- 1 with the table structure from game_db/ folder (for checks)
 - 1 with test data (suggested a duplicate of your game db, if you're starting you can use your production schema)
 
 
@@ -35,13 +35,13 @@ Test requires 2 databases:
 - Battle each other (through the use of abilities)
 - Spawn an enemy (Only people that have the GM role) [Can spawn with stats or randomly]
 - Get exp by winning a fight
+- Level up
 
 
 ## In the future:
-- Allow people to check their skills and get a list of enemies spawned
-- Allow for enemy claiming (have a reference of the user that attacked an enemy) for drops calculations
 - Having the lore from my wiki expanded and added into the game
 - Allowing people to start threads for their RP sessions (adventures)
+- add a way for enemy to select loot at random (Probably will need locations to pick loot types and such)
 - Generating stories using AI (at first until I can write down an algorithm to procedurally generate things)
 - Eventually (probably) releasing the bot to the public so people will have their D&D game engine for D&D based games that can run in discord, a browser or a standalone game app
 - Splitting the game code and the bot so that the game can be ported elsewhere
@@ -55,6 +55,8 @@ Currently working on:
 
 - /create_character -> Create your RP character
 - /check_character -> Will give you a very basic description of your character
+- /check_inventory -> Will return your character's inventory
+- /check_abilities -> Will give you a list of your character's abilities
 - /set_character_stats_order -> Will allow you to set the character stats order for your character based on your initial rolls
 - /delete_character -> Deletes your character so you can start over. This is unreverable.
 

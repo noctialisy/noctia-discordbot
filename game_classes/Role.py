@@ -73,12 +73,6 @@ class Role(GameSystem):
         if entity.get_level() < ability['req_level']:
             return "You don't have that ability."
         
-        if mp < ability['req_mp']:
-            return "Lacks the required MP to use the ability."
-        
-        if sp < ability['req_sp']:
-            return "Lacks the required SP to use the ability."
-        
         # If no target then target self
         if type(trg_entities) is not list:
             trg_entities = [entity]
@@ -154,6 +148,9 @@ class Role(GameSystem):
             elif ability_class == 'ranged' or ability_class == 'finesse':
                 entity_modifier = entity.get_modifier('dexterity')
 
+            elif ability_class == 'spellcasting':
+                entity_modifier = entity.get_modifier(entity.get_role().get_main_stat())
+
             else:
                 entity_modifier = entity.get_modifier(entity.get_role().get_main_stat())
 
@@ -170,9 +167,26 @@ class Role(GameSystem):
 
                 elif entity_roll >= target_ac:
                     skill_dmg_result = 0
+                    target.add_combat_claim(entity.get_id())
 
-                    # Calc ability dmg
-                    if ability_roll != '':
+                    # Calc the dmg
+                    if ability_class in ['melee', 'ranged', 'finesse', '']:
+                        # Bare weapon
+                        weap_dmg_result = 0
+                        weap = entity.get_weapon()
+                        weap_roll = weap['dice_roll'].split(',')
+
+                        for dice in weap_roll:
+                            dice_quantity = dice.split('d')[0]
+                            dice_type = dice.split('d')[1]
+                            weap_dmg_result += sum(entity.roll_dice('d'+dice_type, int(dice_quantity)))
+
+                        # Final dmg apply
+                        dmg = weap_dmg_result + entity_modifier
+                        roll_explains = roll_explains + "\n" + "-# " + entity.name + " Rolls damage for: " + str(dmg) + "! " + str(weap_dmg_result) + " Weapon + " + str(entity_modifier) + " Modifier"
+
+                    else:
+                        # Skill
                         ability_roll = ability_roll.split(',')
                         skill_dmg_result = 0
 
@@ -181,26 +195,16 @@ class Role(GameSystem):
                             dice_type = dice.split('d')[1]
                             skill_dmg_result += sum(entity.roll_dice('d'+dice_type, int(dice_quantity)))
 
-                    # Calc weapon dmg
-                    weap_dmg_result = 0
-                    weap = entity.get_weapon()
-                    weap_roll = weap['dice_roll'].split(',')
+                        dmg = skill_dmg_result + entity_modifier
+                        roll_explains = roll_explains + "\n" + "-# " + entity.name + " Rolls damage for: " + str(dmg) + "! " + str(skill_dmg_result) + " Skill + " + str(entity_modifier) + " Modifier"
 
-                    for dice in weap_roll:
-                        dice_quantity = dice.split('d')[0]
-                        dice_type = dice.split('d')[1]
-                        weap_dmg_result += sum(entity.roll_dice('d'+dice_type, int(dice_quantity)))
-
-                    # Final dmg apply
-                    dmg = skill_dmg_result + weap_dmg_result + entity_modifier
-                    roll_explains = roll_explains + "\n" + "-# " + entity.name + " Rolls damage for: " + str(dmg) + "! " + str(skill_dmg_result) + " Skill + " + str(weap_dmg_result) + " Weapon + " + str(entity_modifier) + " Modifier"
                     
                     print(roll_explains)
+                    target.add_combat_claim(entity.get_id())
                     drops = target.apply_dmg(dmg)
                     action_res_string = 'success'
 
                     if drops != {}:
-                        entity.loot_items(drops)
                         action_res_string = 'success_win'
 
                     action_results.append([target.name, action_res_string, dmg, roll_explains])

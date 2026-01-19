@@ -27,8 +27,8 @@ CREATE TABLE `Entities` (
   `stat_point` int(11) DEFAULT 0,
   `stats` text DEFAULT NULL,
   `skills` text DEFAULT NULL,
-  `abilities` text DEFAULT NULL,
   `inventory` text DEFAULT NULL,
   `combat_ready` int(11) DEFAULT 1,
+  `combat_claims` text DEFAULT NULL,
   PRIMARY KEY (`id`)
 );

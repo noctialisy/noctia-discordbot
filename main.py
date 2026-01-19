@@ -405,7 +405,7 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
             embed.add_field(name="Main Items", value="", inline=False)
             embed.add_field(name="===", value="", inline=False)
             embed.add_field(name="Gold", value=str(entity.inventory.items['gold']), inline=True)
-            embed.add_field(name="EXP", value=str(entity.cur_exp), inline=True)
+            embed.add_field(name="EXP", value=str(entity.cur_exp) + "/" + str(entity.req_exp), inline=True)
             
             embed.add_field(name="Equipment", value="", inline=False)
             embed.add_field(name="===", value="", inline=False)
@@ -484,20 +484,25 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
                 title = entity.name + " entity_id: " + entity.entity_id
 
             #user_avatar = ctx.author.avatar
-            embed = discord.Embed(
-                title=title,
-                description='',
-                color=discord.Color.blurple()
-            )
-            embed.add_field(name="", value="", inline=False)
-            embed.add_field(name="===", value="", inline=False)
-            
-            for item in entity.char_role.role_abilities:
-                embed.add_field(name=str(item['name']), value=item['description'], inline=False)
+            string_result = title + "\n"
+            string_result += "===" + "\n\n"
 
-            embed.set_author(name="RP Char card")
+            for item in entity.get_abilities():
+                if item['type'] != '':
+                    ability_class = str(item['type']).split('_')[0]
+                    ability_type = str(item['type']).split('_')[1]
 
-            await ctx.response.send_message("Here's your character's ability list!", embed=embed, ephemeral=silent)
+                else:
+                    ability_class = 'melee'
+                    ability_type = 'physical'
+
+                string_result += "**" + str(item['name']) + "**  - " + " **[" + ability_class + " " + ability_type + "] [" + str(item['dice_roll']) + "]**" + "\n"
+                string_result += item['description'] + "\n"
+                string_result += "Buffs: " + str(item['positive_effects']) + "\n"
+                string_result += "Debuffs: " + str(item['negative_effects']) + "\n"
+                string_result += "===" + "\n\n"
+
+            await ctx.response.send_message("Here's your character's ability list!\n\n" + string_result, ephemeral=silent)
 
             if entity.ent_type == 'Character' and entity.has_unspent_stats() == True:
                 stat_points = entity.get_stat_points()
@@ -651,12 +656,13 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
         description="Spawns a random enemy",
         guild_ids=[discord_main_guild_id]
     )
+    @option("level", description="Enemy level")
     @option("name", description="Enemy name")
     @option("race", description="Enemy race", autocomplete=get_character_races)
     @option("gender", description="Enemy gender", autocomplete=get_character_genders)
     @option("role", description="Enemy role (Class / Job)", autocomplete=get_character_roles)
     @option("nsfw", description="Is your character nsfw or sfw (assumed: sfw)")
-    async def rp_enemy_spawn(ctx, name = None, race = None, gender = None, role = None, nsfw = False):
+    async def rp_enemy_spawn(ctx, level = None, name = None, race = None, gender = None, role = None, nsfw = False):
         author = ctx.author
         user_id = ctx.author.id
         gm_role = discord.utils.find(lambda r: r.name == 'GM', ctx.guild.roles)
@@ -679,12 +685,12 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
 
         enemy_id += 1
 
-        enemy = enemy.create(name, race, gender, role, nsfw)
+        enemy = enemy.create(level, name, race, gender, role, nsfw)
         enemy.set_entity_id(str(enemy_id))
         enemy.rest()
         enemy.save(enemy_id)
         embed = discord.Embed(
-            title=enemy.name + " id: " + str(enemy.entity_id),
+            title=enemy.name + " level [" + str(enemy.char_level) + "]" + " id: [" + str(enemy.entity_id) + "]",
             description=enemy.description,
             color=discord.Color.blurple()
         )

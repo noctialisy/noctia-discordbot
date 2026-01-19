@@ -12,13 +12,13 @@ class Inventory:
                 "exp": 10,
                 "gold": 0,
                 "equipment": {
-                    "main_weapon": {"id": 1, "name": "Bare hands", "description": "", "attack_type": "melee", "dice_roll": "1d4"},
-                    "sub_weapon": {"id": 0, "name": "Empty", "description": "", "effects": ""},
-                    "head": {"id": 0, "name": "Empty", "description": "", "effects": ""},
-                    "chest": {"id": 0, "name": "Empty", "description": "", "effects": ""},
-                    "arms": {"id": 0, "name": "Empty", "description": "", "effects": ""},
-                    "legs": {"id": 0, "name": "Empty", "description": "", "effects": ""},
-                    "necklace": {"id": 0, "name": "Empty", "description": "", "effects": ""}
+                    "main_weapon": {"id": 7, "name": "Bare hands", "item_type": "weapon", "description": "", "attack_type": "melee", "dice_roll": "1d4", "base_drop_rate": 0, "base_drop_rate": 0, "base_drop_rate": 0, "effects": {}},
+                    "sub_weapon": {"id": 0, "name": "Empty", "item_type": "equip", "description": "", "attack_type": "", "dice_roll": "", "base_drop_rate": 0, "base_drop_rate": 0, "base_drop_rate": 0, "effects": {}},
+                    "head": {"id": 0, "name": "Empty", "item_type": "equip", "description": "", "attack_type": "", "dice_roll": "", "base_drop_rate": 0, "base_drop_rate": 0, "base_drop_rate": 0, "effects": {}},
+                    "chest": {"id": 0, "name": "Empty", "item_type": "equip", "description": "", "attack_type": "", "dice_roll": "", "base_drop_rate": 0, "base_drop_rate": 0, "base_drop_rate": 0, "effects": {}},
+                    "arms": {"id": 0, "name": "Empty", "item_type": "equip", "description": "", "attack_type": "", "dice_roll": "", "base_drop_rate": 0, "base_drop_rate": 0, "base_drop_rate": 0, "effects": {}},
+                    "legs": {"id": 0, "name": "Empty", "item_type": "equip", "description": "", "attack_type": "", "dice_roll": "", "base_drop_rate": 0, "base_drop_rate": 0, "base_drop_rate": 0, "effects": {}},
+                    "necklace": {"id": 0, "name": "Empty", "item_type": "equip", "description": "", "attack_type": "", "dice_roll": "", "base_drop_rate": 0, "base_drop_rate": 0, "base_drop_rate": 0, "effects": {}}
                 },
                 "pouch": []
             }
@@ -34,7 +34,7 @@ class Inventory:
             "items": self.items
         })
     
-    def get_max_(self):
+    def get_max_slots(self):
         return self.max_slots
     
     def get_items(self):

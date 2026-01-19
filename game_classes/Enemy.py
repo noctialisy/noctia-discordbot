@@ -22,7 +22,7 @@ class Enemy(Entity):
     # =========================================================
     # Main methods
     # =========================================================
-    def create(self, name: str, race = None, gender = None, role = None, nsfw = False):
+    def create(self, level = None, name = None, race = None, gender = None, role = None, nsfw = False):
         self.ent_type = "Enemy"
         
         if type(name) is not str:
@@ -93,6 +93,16 @@ class Enemy(Entity):
         self.assign_stat_order()
         self.calc_stats()
 
+        if level is not None:
+            level = int(level)
+
+            if level <= self.MAX_LEVEL:
+                cur_level = self.char_level
+
+                while cur_level < level:
+                    self.check_level_up(force=True)
+                    cur_level += 1
+
         return self
     
     # Pick a 2 stat preference based on Job
@@ -118,8 +128,8 @@ class Enemy(Entity):
 
         self.set_raw_stat(0, "", True)
 
-    def check_level_up(self):
-        leveled = super().check_level_up()
+    def check_level_up(self, force = False):
+        leveled = super().check_level_up(force)
 
         if leveled:
             self.set_stat(1, self.char_role.get_main_stat())

@@ -52,11 +52,10 @@ class Entity(GameSystem):
             "luck": 0
         }
         self.skills = []
-        self.abilities = []
-
         self.inventory = Inventory()
 
         self.combat_ready = 1
+        self.combat_claims = []
     
     
     
@@ -146,6 +145,7 @@ class Entity(GameSystem):
             save_data['skills'] = json.dumps(self.get_skills())
             save_data['abilities'] = json.dumps(self.get_abilities())
             save_data['inventory'] = self.get_inventory().print()
+            save_data['combat_claims'] = json.dumps(self.get_combat_claims())
 
             if save_data['height'] == "":
                 save_data['height'] = 0
@@ -156,11 +156,11 @@ class Entity(GameSystem):
             if query_res == []:
                 # No char found in DB, Insert
                 query = ("INSERT INTO `Entities` "
-                            "(uid, ent_type, name, surname, gender, race, height, weight, nsfw, description, backstory, char_role, char_level, role_level, mhp, mmp, msp, hp, mp, sp, ac, cur_exp, req_exp, raw_stats, stat_point, stats, skills, abilities, inventory, combat_ready) "
+                            "(uid, ent_type, name, surname, gender, race, height, weight, nsfw, description, backstory, char_role, char_level, role_level, mhp, mmp, msp, hp, mp, sp, ac, cur_exp, req_exp, raw_stats, stat_point, stats, skills, inventory, combat_ready, combat_claims) "
                             f"VALUES(\"{save_data['uid']}\", \"{save_data['ent_type']}\", \"{save_data['name']}\", \"{save_data['surname']}\", \"{save_data['gender']}\", \"{save_data['race']}\", {int(save_data['height'])}, {int(save_data['weight'])}, "
                             f"{int(save_data['nsfw'])}, \"{save_data['description']}\", \"{save_data['backstory']}\", \"{save_data['char_role']}\", {save_data['char_level']}, "
                             f"{save_data['role_level']}, {save_data['mhp']}, {save_data['mmp']}, {save_data['msp']}, {save_data['hp']}, {save_data['mp']}, {save_data['sp']}, {save_data['ac']}, "
-                            f"{save_data['cur_exp']}, {save_data['req_exp']}, '{save_data['raw_stats']}', {save_data['stat_point']}, '{save_data['stats']}', '{save_data['skills']}', '{save_data['abilities']}', '{save_data['inventory']}', {save_data['combat_ready']});")
+                            f"{save_data['cur_exp']}, {save_data['req_exp']}, '{save_data['raw_stats']}', {save_data['stat_point']}, '{save_data['stats']}', '{save_data['skills']}', '{save_data['inventory']}', {save_data['combat_ready']}, '{save_data['combat_claims']}');")
 
             else:
                 # Char exists, Update
@@ -171,7 +171,7 @@ class Entity(GameSystem):
                             f"mhp = {save_data['mhp']}, mmp = {save_data['mmp']}, msp = {save_data['msp']}, hp = {save_data['hp']}, mp = {save_data['mp']}, sp = {save_data['sp']}, ac = {save_data['ac']}, "
                             f"cur_exp = {save_data['cur_exp']}, req_exp = {save_data['req_exp']}, "
                             f"raw_stats = '{save_data['raw_stats']}', stat_point = {save_data['stat_point']}, stats = '{save_data['stats']}', "
-                            f"skills = '{save_data['skills']}', abilities = '{save_data['abilities']}', inventory = '{save_data['inventory']}', combat_ready = {save_data['combat_ready']} "
+                            f"skills = '{save_data['skills']}', inventory = '{save_data['inventory']}', combat_ready = {save_data['combat_ready']}, combat_claims = '{save_data['combat_claims']}' "
                             f"WHERE uid = \"{save_data['uid']}\";")
             
 
@@ -211,9 +211,9 @@ class Entity(GameSystem):
         self.raw_stats = json.loads(vars['raw_stats'])
         self.stats = json.loads(vars['stats'])
         self.skills = json.loads(vars['skills'])
-        self.abilities = json.loads(vars['abilities'])
         self.inventory = Inventory(json.loads(vars['inventory']))
         self.combat_ready = vars['combat_ready']
+        self.combat_claims = json.loads(vars['combat_claims'])
     
     def delete(self, user_id: int):
         user_id = self.entity_id
@@ -232,7 +232,6 @@ class Entity(GameSystem):
             query_del = (f"DELETE FROM `Entities` WHERE ent_type = '{ent_type}' AND uid = '{user_id}';")
             self.db_cursor.execute(query_del)
 
-    
     def describe(self):
         """
         Return the character's description
@@ -260,10 +259,10 @@ class Entity(GameSystem):
 
         return self.char_role.use_ability(self, self.mp, self.sp, ability_name, targets)    
 
-    def check_level_up(self):
+    def check_level_up(self, force = False):
         leveled = False
 
-        if self.cur_exp >= self.req_exp and self.cur_exp != 0:
+        if self.cur_exp >= self.req_exp and self.cur_exp != 0 or force:
             if self.char_level < self.MAX_LEVEL:
                 self.level_up()
                 self.calc_stats()
@@ -292,18 +291,18 @@ class Entity(GameSystem):
 
         if self.char_level == 1:
             # At start, Max dice + modifier
-            self.mhp = int(hit_dice.split("d")[1]) + self.get_modifier('constitution')
-            self.mmp = int(magic_dice.split("d")[1]) + self.get_modifier('intelligence')
-            self.msp = int(special_dice.split("d")[1]) + self.get_modifier('dexterity')
+            self.mhp = max(1, int(hit_dice.split("d")[1]) + self.get_modifier('constitution'))
+            self.mmp = max(1, int(magic_dice.split("d")[1]) + self.get_modifier('intelligence'))
+            self.msp = max(1, int(special_dice.split("d")[1]) + self.get_modifier('dexterity'))
 
             # Calculate base AC
             self.ac = 10 + self.get_modifier('constitution')
 
         else:
             # Lv2+, dice_roll + modifier
-            self.mhp += self.roll_dice(hit_dice)[0] + self.get_modifier('constitution')
-            self.mmp += self.roll_dice(magic_dice)[0] + self.get_modifier('intelligence')
-            self.msp += self.roll_dice(special_dice)[0] + self.get_modifier('dexterity')
+            self.mhp += max(0, self.roll_dice(hit_dice)[0] + self.get_modifier('constitution'))
+            self.mmp += max(0, self.roll_dice(magic_dice)[0] + self.get_modifier('intelligence'))
+            self.msp += max(0, self.roll_dice(special_dice)[0] + self.get_modifier('dexterity'))
 
             # Calculate base AC
             self.ac = 10 + self.get_modifier('constitution')
@@ -322,17 +321,33 @@ class Entity(GameSystem):
         else:
             self.hp = 0
 
-        # Calc drops
+        # Calc and process drops
         if self.hp == 0:
-            drops = self.drop_items()
             self.combat_ready = 0
+
+            for tmp_entity_id in self.combat_claims:
+                # Recalculate the drops for every "party" member
+                drops = self.drop_items()
+
+                tmp_entity_id = str(tmp_entity_id)
+                tmp_entity = Entity()
+
+                if tmp_entity_id.startswith('@'):
+                    tmp_entity.ent_type = 'Character'
+
+                else:
+                    tmp_entity.ent_type = 'Enemy'
+
+                tmp_entity = tmp_entity.load(tmp_entity_id)
+                tmp_entity.loot_items(drops)
+                tmp_entity.save()
 
             if self.ent_type == "Character":
                 self.save(self.entity_id)
 
             if self.ent_type == "Enemy":
                 self.delete(self.entity_id)
-        
+
         else:
             self.save(self.entity_id)
 
@@ -355,13 +370,18 @@ class Entity(GameSystem):
             self.combat_ready = 1
     
     def drop_items(self):
-        items = self.inventory.get_items()
+        inventory = self.inventory.get_items()
 
-        drops = {}
+        drops = {
+            "exp": 0,
+            "gold": 0,
+            "equipment": [],
+            "pouch": []
+        }
 
         if self.ent_type == "Enemy":
-            drops['exp'] = items['exp']
-            drops['gold'] = items['gold']
+            drops['exp'] = inventory['exp']
+            drops['gold'] = inventory['gold']
         
         else:
             roll_for_gold = self.roll_dice("d100")
@@ -369,10 +389,29 @@ class Entity(GameSystem):
 
             # These would need to be checked for actual drop chances in DB
             if roll_for_exp[0] <= 10:
-                drops['exp'] = items['exp']
+                drops['exp'] = inventory['exp']
 
             if roll_for_gold[0] <= 20:
-                drops['gold'] = items['gold']
+                drops['gold'] = inventory['gold']
+
+        # Roll for item loss
+        for index, item in enumerate(inventory['pouch']):
+            item_drop_chance = item['base_drop_rate'] * 100
+            roll = self.roll_dice('d100')
+
+            if roll[0] <= item_drop_chance:
+                drops['pouch'].append(inventory['pouch'].pop(index))
+
+
+        # Roll for equip loss
+        for key, equip in inventory['equipment'].items():
+            equip_drop_chance = equip['base_drop_rate'] * 100
+            roll = self.roll_dice('d100')
+
+            if roll[0] <= equip_drop_chance:
+                drops['equipment'].append(equip)
+                self.remove_equip(key, delete=True)
+
 
         return drops
 
@@ -389,7 +428,8 @@ class Entity(GameSystem):
 
             else:
                 if len(self.inventory.items['pouch']) < self.inventory.get_max_slots():
-                    self.inventory.items['pouch'].append(item)
+                    if item != []:
+                        self.inventory.items['pouch'].append(item)
         
         self.save(self.entity_id)
     
@@ -434,11 +474,65 @@ class Entity(GameSystem):
             return True
         
         return False
+    
+    def add_combat_claim(self, entity_id):
+        if entity_id not in self.combat_claims:
+            self.combat_claims.append(entity_id)
+            self.save()
 
+    # Equipment handle
+    def equip_item(self, equip_type, equip_index):
+        equipment = self.inventory.get_items()['equipment']
+        
+        if equip_type in equipment.keys():
+            try:
+                result = self.remove_equip(equip_type)
+
+                if type(result) != bool:
+                    raise Exception(result)
+
+            except Exception as e:
+                return e
+
+            equip = self.inventory.items['pouch'].pop(equip_index)
+            self.inventory.items['equipment'][equip_type] = equip
+
+            self.calc_stats()
+            self.save(self.entity_id)
+
+        else:
+            return "Inventory slot doesn't exist!"
+
+    def remove_equip(self, equip_type, delete = False):
+        equipment = self.inventory.items['equipment']
+        pouch = self.inventory.items['pouch']
+
+        if len(pouch) >= self.inventory.get_max_slots():
+            return "Inventory is full!"
+
+        if equip_type in equipment.keys():
+            equip = self.inventory.get_items()['equipment'][equip_type]
+
+            if equip['name'] != 'Bare hands' and equip['name'] != 'Empty':
+                if delete == False:
+                    self.inventory.items['pouch'].append(equip)
+
+            self.inventory.items['equipment'][equip_type] = self.set_default_equip(equip_type)
+
+            self.calc_stats()
+            self.save(self.entity_id)
+
+            return True
+
+        else:
+            return "Inventory slot doesn't exist!"
 
     # =========================================================
     # GETS
     # =========================================================
+    def get_id(self):
+        return self.entity_id
+
     def get_name(self):
         return self.name
     
@@ -464,7 +558,13 @@ class Entity(GameSystem):
         return self.skills
     
     def get_abilities(self):
-        return self.abilities
+        abilities = []
+
+        for ability in self.char_role.get_abilities():
+            if ability['req_level'] <= self.char_level:
+                abilities.append(ability)
+
+        return abilities
     
     def get_modifier(self, stat_name: str):
         if stat_name in self.STATS:
@@ -476,6 +576,12 @@ class Entity(GameSystem):
     
     def get_weapon(self):
         return self.inventory.get_items()['equipment']['main_weapon']
+    
+    def get_combat_claims(self):
+        return self.combat_claims
+    
+    def get_items(self):
+        return self.inventory.get_items()
     
     # =========================================================
     # SETS
@@ -555,8 +661,8 @@ class Entity(GameSystem):
             equip = ""
 
             if equip_type == 'main_weapon':
-                equip = {"id": 1, "name": "Bare hands", "description": "", "attack_type": "melee", "dice_roll": "1d4"}
+                equip = {"id": 7, "name": "Bare hands", "item_type": "weapon", "description": "", "attack_type": "melee", "dice_roll": "1d4", "base_drop_rate": 0, "base_drop_rate": 0, "base_drop_rate": 0, "effects": {}}
             else:
-                equip = {"id": 0, "name": "Empty", "description": "", "effects": ""}
+                equip = {"id": 0, "name": "Empty", "item_type": "equip", "description": "", "attack_type": "", "dice_roll": "", "base_drop_rate": 0, "base_drop_rate": 0, "base_drop_rate": 0, "effects": {}}
 
             self.inventory.items['equipment'][equip_type] = equip
