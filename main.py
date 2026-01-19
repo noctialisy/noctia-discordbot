@@ -442,6 +442,80 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
         else:
             await ctx.response.send_message(entity, ephemeral=False)
     
+
+
+    # Check your Character's inventory
+    # -------------------------------------
+    @bot.slash_command(
+        name="check_abilities",
+        description="Check your RP Character abilities",
+        guild_ids=[discord_main_guild_id]
+    )
+    @option("silent", description="Doesn't print your character and only give you info about your stats (Default: False)")
+    async def check_abilities(ctx, silent=False):
+        user_id = ctx.author.id
+
+        entity_id = None
+
+        if entity_id is None:
+            entity_id = user_id
+            entity_id = "@" + str(user_id)
+            user_id = entity_id
+
+        else:
+            entity_id = str(entity_id)
+        
+        if entity_id.startswith('<'):
+            entity_id = str(entity_id).replace('<', '').replace('>', '')
+            entity = Character()
+
+        elif entity_id.startswith('@'):
+            entity = Character()
+
+        else:
+            entity = Enemy()
+
+        entity = entity.load(entity_id)
+
+        if type(entity) is not str:
+            if entity.ent_type == 'Character':
+                title = entity.name + " " + entity.surname + " - Ability list"
+            else:
+                title = entity.name + " entity_id: " + entity.entity_id
+
+            #user_avatar = ctx.author.avatar
+            embed = discord.Embed(
+                title=title,
+                description='',
+                color=discord.Color.blurple()
+            )
+            embed.add_field(name="", value="", inline=False)
+            embed.add_field(name="===", value="", inline=False)
+            
+            for item in entity.char_role.role_abilities:
+                embed.add_field(name=str(item['name']), value=item['description'], inline=False)
+
+            embed.set_author(name="RP Char card")
+
+            await ctx.response.send_message("Here's your character's ability list!", embed=embed, ephemeral=silent)
+
+            if entity.ent_type == 'Character' and entity.has_unspent_stats() == True:
+                stat_points = entity.get_stat_points()
+                raw_stat_points = entity.get_raw_stats()
+                raw_stat_explain_string = ""
+
+                await ctx.followup.send(
+                    "Hey! You have unspent stat points! \n\n" +
+                    f"You have {str(stat_points)} stat points and {str(raw_stat_points)} raw stats.\n" +
+                    "To assign these, use the /set_character_stats and /set_character_stats_order commands\n" +
+                    raw_stat_explain_string,
+                    ephemeral=True
+                )
+
+
+        else:
+            await ctx.response.send_message(entity, ephemeral=False)
+
     
     
     # Rest your character
