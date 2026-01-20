@@ -572,7 +572,7 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
     @option("target", description="The target of the action (Depends on action - Empty = Self)")
     @option("hide_rolls", description="If you want the rolls ro show or no, (Default = False)")
     async def rp_action(ctx, ability_name: str, target=None, hide_rolls = False):
-        user_id = ctx.author.id
+        user_id = '@' + str(ctx.author.id)
         character = Character()
         character = character.load(user_id)
 
@@ -584,9 +584,9 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
             # If target is empty then target is self
             target = str(target)
 
-            if target == '':
+            if target is None or target == 'None':
                 target_self = True
-                target = "@" + str(user_id)
+                target = str(user_id)
 
             else:
                 if '<' in target:
