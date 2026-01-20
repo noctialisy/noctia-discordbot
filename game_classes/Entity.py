@@ -264,7 +264,7 @@ class Entity(GameSystem):
 
                 abilities.append(ability)
 
-            random_index = random.randint(0, len(abilities) - 2)
+            random_index = random.randint(0, len(abilities) - 1)
             ability = abilities[random_index]
             ability_name = ability['name']
 
