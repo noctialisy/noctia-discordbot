@@ -105,6 +105,10 @@ class Role(GameSystem):
             # Perform Heal
             calc_results = self.calculate_heal(entity, trg_entities, ability_class, ability_roll)
 
+        elif ability_type == 'revive':
+            # Perform Revive
+            calc_results = self.calculate_revive(entity, trg_entities, ability_class, ability_roll)
+
         else:
             # Perform Attack
             # # Attack check [] || [result, [dmg]]
@@ -134,6 +138,7 @@ class Role(GameSystem):
     def calculate_dmg(self, entity, entity_targets=[], ability_class="melee", ability_roll=""):
         action_results = []
         roll_explains = ''
+        enemy_action_result = ""
 
         if type(entity_targets) is not list:
             # Target self if no target
@@ -203,17 +208,52 @@ class Role(GameSystem):
                     target.add_combat_claim(entity.get_id())
                     drops = target.apply_dmg(dmg)
                     action_res_string = 'success'
+                    enemy_alive = True
 
                     if drops != {}:
                         action_res_string = 'success_win'
+                        enemy_alive = False
 
-                    action_results.append([target.name, action_res_string, dmg, roll_explains])
+                    # Perform Battle Enemy logic
+                    if enemy_alive and target.ent_type == 'Enemy':
+                        enemy_action = target.use_ability(None, [entity])
+
+                        if type(enemy_action) == str:
+                            enemy_action_result = ""
+                            print(enemy_action)
+
+                        else:
+                            enemy_action_result = f"*{enemy_action[0][1]["cast"]}!*\n"
+
+                            for ability_result in enemy_action:
+                                target_name = ability_result[0][0]
+                                result = ability_result[0][1]
+                                lines = ability_result[1]
+
+                            if result == "success" or result == "success_win":
+                                enemy_action_result = enemy_action_result + "  - " + lines["success"] + "\n"
+
+                            elif result == "fail":
+                                enemy_action_result = enemy_action_result + "  - " + lines["fail"] + "\n"
+                            
+                            else:
+                                enemy_action_result = enemy_action_result + "  - " + target_name + " Cannot continue to fight...\n"
+
+                            if result == "success_win":
+                                enemy_action_result = enemy_action_result + "  - " + target_name + " was defeated!\n"
+
+                    else:
+                        enemy_action_result = ""
+
+
+
+                    action_results.append([target.name, action_res_string, dmg, roll_explains, enemy_action_result])
                 
                 else:
-                    action_results.append([target.name, 'fail', 0, roll_explains])
+                    action_results.append([target.name, 'fail', 0, roll_explains, enemy_action_result])
 
         else:
-            action_results = [['empty', 'fail', 0, roll_explains]]
+            action_results.append(['empty', 'fail', 0, roll_explains, enemy_action_result])
 
 
         return action_results
@@ -222,6 +262,7 @@ class Role(GameSystem):
     def calculate_heal(self, entity, entity_targets=[], ability_class="melee", ability_roll=""):
         action_results = []
         roll_explains = ''
+        enemy_action_result = ""
 
         if type(entity_targets) is not list:
             # Target self if no entity provided
@@ -260,10 +301,43 @@ class Role(GameSystem):
                 
                 print(roll_explains)
                 target.apply_heal(heal_amt)
-                action_results.append([target.name, 'success', heal_amt, roll_explains])
+                action_results.append([target.name, 'success', heal_amt, roll_explains, enemy_action_result])
 
         else:
-            action_results = [['empty', 'fail', 0, roll_explains]]
+            action_results.append(['empty', 'fail', 0, roll_explains, enemy_action_result])
+
+        return action_results
+    
+    
+    def calculate_revive(self, entity, entity_targets=[], ability_class="melee", ability_roll=""):
+        action_results = []
+        roll_explains = ''
+        enemy_action_result = ''
+
+        if type(entity_targets) is not list:
+            # Target self if no entity provided
+            entity_targets = [entity]
+        
+        if entity_targets != []:
+
+            # Heal all targets
+            for target in entity_targets:
+
+                if target.combat_ready != 0:
+                    action_results.append([target.name, 'fail', 0, roll_explains, enemy_action_result])
+
+                else:
+                    # Perform Revive
+                    heal_amt = target.revive()
+                    
+                    if type(heal_amt) is int:
+                        action_results.append([target.name, 'success', heal_amt, roll_explains, enemy_action_result])
+
+                    else:
+                        action_results.append([target.name, 'fail', 0, roll_explains, enemy_action_result])
+
+        else:
+            action_results.append(['empty', 'fail', 0, roll_explains, enemy_action_result])
 
         return action_results
 

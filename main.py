@@ -334,7 +334,12 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
             embed.add_field(name="Intelligence", value=entity.stats['intelligence'], inline=True)
             embed.add_field(name="Wisdom", value=entity.stats['wisdom'], inline=True)
             embed.add_field(name="Charisma", value=entity.stats['charisma'], inline=True)
-            embed.add_field(name="Backstory", value="Is empty in here for now...")
+            embed.add_field(name="Current status", value="")
+            if entity.combat_ready == 0:
+                embed.add_field(name="Exhausted", value="Can't battle and needs rest.", inline=True)
+            
+            embed.add_field(name="", value="====", inline=False)
+            embed.add_field(name="Backstory", value="Is empty in here for now...", inline=False)
             embed.set_author(name="RP Char card")
 
             await ctx.response.send_message("Here's your character card!", embed=embed, ephemeral=silent)
@@ -629,7 +634,11 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
                     if roll_explain != '' and hide_rolls == False:
                         action_result = action_result + "\n" + roll_explain + "\n"
 
-                    if result == "success" or result == "success_win":
+                    if result == "success":
+                        enemy_action_result = ability_result[0][4]
+                        action_result = action_result + "  - " + lines["success"] + "\n\n" + enemy_action_result
+                    
+                    elif result == "success_win":
                         action_result = action_result + "  - " + lines["success"] + "\n"
 
                     elif result == "fail":

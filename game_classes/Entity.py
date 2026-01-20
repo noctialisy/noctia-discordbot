@@ -1,5 +1,5 @@
 # Main entity class, it is the base for NPCs, Enemies and Characters
-import os, json, pickle
+import os, json, pickle, random
 
 from .GameSystem import GameSystem
 from .Role import Role
@@ -249,7 +249,25 @@ class Entity(GameSystem):
 
         return character_description[0]
     
-    def use_ability(self, ability_name, targets=[]):
+    def use_ability(self, ability_name = None, targets=[]):
+        if self.combat_ready == 0:
+            return "was defeated in this battle and needs to recover"
+
+        if self.ent_type == 'Enemy' and ability_name is None:
+            abilities = []
+
+            for ability in self.get_abilities():
+                if ability['name'] == 'Defend':
+                    continue
+                if ability['name'] == 'Pat':
+                    continue
+
+                abilities.append(ability)
+
+            random_index = random.randint(0, len(abilities) - 2)
+            ability = abilities[random_index]
+            ability_name = ability['name']
+
         if type(targets) is not list:
             if targets is not None:
                 targets = [targets]
@@ -312,6 +330,7 @@ class Entity(GameSystem):
         self.hp = self.mhp
         self.mp = self.mmp
         self.sp = self.msp
+        self.combat_ready = 1
     
     def apply_dmg(self, dmg_amt):
         drops = {}
@@ -365,9 +384,15 @@ class Entity(GameSystem):
         self.save(self.entity_id)
 
     def revive(self):
-        if self.hp == 0:
-            self.hp = int(self.mhp * 0.20)
+        heal = 0
+
+        if self.combat_ready == 0:
+            heal = int(self.mhp * 0.20)
+            self.hp = heal
             self.combat_ready = 1
+            self.save()
+
+        return heal
     
     def drop_items(self):
         inventory = self.inventory.get_items()
@@ -395,12 +420,12 @@ class Entity(GameSystem):
                 drops['gold'] = inventory['gold']
 
         # Roll for item loss
-        for index, item in enumerate(inventory['pouch']):
+        for key, item in enumerate(inventory['pouch']):
             item_drop_chance = item['base_drop_rate'] * 100
             roll = self.roll_dice('d100')
 
             if roll[0] <= item_drop_chance:
-                drops['pouch'].append(inventory['pouch'].pop(index))
+                drops['pouch'].append(inventory['pouch'].pop(key))
 
 
         # Roll for equip loss
@@ -426,10 +451,15 @@ class Entity(GameSystem):
             elif key == "gold":
                 self.inventory.items["gold"] += item
 
-            else:
+            elif key == "pouch":
                 if len(self.inventory.items['pouch']) < self.inventory.get_max_slots():
-                    if item != []:
-                        self.inventory.items['pouch'].append(item)
+                    for i in item:
+                        self.inventory.items['pouch'].append(i)
+
+            elif key == "equipment":
+                if len(self.inventory.items['pouch']) < self.inventory.get_max_slots():
+                    for i in item:
+                        self.inventory.items['pouch'].append(i)
         
         self.save(self.entity_id)
     
@@ -517,8 +547,7 @@ class Entity(GameSystem):
                 if delete == False:
                     self.inventory.items['pouch'].append(equip)
 
-            self.inventory.items['equipment'][equip_type] = self.set_default_equip(equip_type)
-
+            self.set_default_equip(equip_type)
             self.calc_stats()
             self.save(self.entity_id)
 
@@ -656,6 +685,7 @@ class Entity(GameSystem):
 
     def set_default_equip(self, equip_type):
         equipment = self.inventory.items['equipment']
+        equip = {"id": 0, "name": "Empty", "item_type": "equip", "description": "", "attack_type": "", "dice_roll": "", "base_drop_rate": 0, "base_drop_rate": 0, "base_drop_rate": 0, "effects": {}}
 
         if equip_type in equipment.keys():
             equip = ""
@@ -666,3 +696,5 @@ class Entity(GameSystem):
                 equip = {"id": 0, "name": "Empty", "item_type": "equip", "description": "", "attack_type": "", "dice_roll": "", "base_drop_rate": 0, "base_drop_rate": 0, "base_drop_rate": 0, "effects": {}}
 
             self.inventory.items['equipment'][equip_type] = equip
+
+        return equip
