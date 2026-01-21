@@ -54,7 +54,9 @@ class Entity(GameSystem):
         self.skills = []
         self.inventory = Inventory()
 
+        self.encounter_id = 0
         self.combat_ready = 1
+        self.turn_ready = 1
         self.combat_claims = []
     
     
@@ -62,6 +64,7 @@ class Entity(GameSystem):
     # =========================================================
     # MAINS
     # =========================================================
+    # System handle
     def load(self, user_id: str):
         """
         Load the character from the database, can also check for existence
@@ -79,6 +82,9 @@ class Entity(GameSystem):
             user_id = str(user_id)
 
         if ent_type == 'Character':
+            if user_id.startswith('<'):
+                user_id = user_id.replace('<', '').replace('>', '')
+
             if not user_id.startswith('@'):
                 user_id = '@' + user_id
 
@@ -97,7 +103,44 @@ class Entity(GameSystem):
             self.db_cursor.execute(query)
             result = self.db_cursor.fetchall()
 
-            self.load_data(result[0])
+            self.entity_id = result[0]['uid']
+            self.ent_type = result[0]["ent_type"]
+            self.name = result[0]['name']
+            self.surname = result[0]['surname']
+            self.gender = result[0]['gender']
+
+            if self.gender == "Female":
+                self.pronoun_self = "her"
+            else:
+                self.pronoun_self = "his"
+
+            self.race = result[0]['race']
+            self.height = result[0]['height']
+            self.weight = result[0]['weight']
+            self.nsfw = result[0]['nsfw']
+            self.description = result[0]['description']
+            self.backstory = result[0]['backstory']
+            self.char_role = Role(result[0]['char_role'])
+            self.char_level = result[0]['char_level']
+            self.role_level = result[0]['role_level']
+            self.mhp = result[0]['mhp']
+            self.mmp = result[0]['mmp']
+            self.msp = result[0]['msp']
+            self.hp = result[0]['hp']
+            self.mp = result[0]['mp']
+            self.sp = result[0]['sp']
+            self.ac = result[0]['ac']
+            self.cur_exp = result[0]['cur_exp']
+            self.req_exp = result[0]['req_exp']
+            self.stat_point = result[0]['stat_point']
+            self.raw_stats = json.loads(result[0]['raw_stats'])
+            self.stats = json.loads(result[0]['stats'])
+            self.skills = json.loads(result[0]['skills'])
+            self.inventory = Inventory(json.loads(result[0]['inventory']))
+            self.encounter_id = result[0]['encounter_id']
+            self.combat_ready = result[0]['combat_ready']
+            self.turn_ready = result[0]['turn_ready']
+            self.combat_claims = json.loads(result[0]['combat_claims'])
 
             return self
 
@@ -156,11 +199,11 @@ class Entity(GameSystem):
             if query_res == []:
                 # No char found in DB, Insert
                 query = ("INSERT INTO `Entities` "
-                            "(uid, ent_type, name, surname, gender, race, height, weight, nsfw, description, backstory, char_role, char_level, role_level, mhp, mmp, msp, hp, mp, sp, ac, cur_exp, req_exp, raw_stats, stat_point, stats, skills, inventory, combat_ready, combat_claims) "
+                            "(uid, ent_type, name, surname, gender, race, height, weight, nsfw, description, backstory, char_role, char_level, role_level, mhp, mmp, msp, hp, mp, sp, ac, cur_exp, req_exp, raw_stats, stat_point, stats, skills, inventory, encounter_id, combat_ready, turn_ready, combat_claims) "
                             f"VALUES(\"{save_data['uid']}\", \"{save_data['ent_type']}\", \"{save_data['name']}\", \"{save_data['surname']}\", \"{save_data['gender']}\", \"{save_data['race']}\", {int(save_data['height'])}, {int(save_data['weight'])}, "
                             f"{int(save_data['nsfw'])}, \"{save_data['description']}\", \"{save_data['backstory']}\", \"{save_data['char_role']}\", {save_data['char_level']}, "
                             f"{save_data['role_level']}, {save_data['mhp']}, {save_data['mmp']}, {save_data['msp']}, {save_data['hp']}, {save_data['mp']}, {save_data['sp']}, {save_data['ac']}, "
-                            f"{save_data['cur_exp']}, {save_data['req_exp']}, '{save_data['raw_stats']}', {save_data['stat_point']}, '{save_data['stats']}', '{save_data['skills']}', '{save_data['inventory']}', {save_data['combat_ready']}, '{save_data['combat_claims']}');")
+                            f"{save_data['cur_exp']}, {save_data['req_exp']}, '{save_data['raw_stats']}', {save_data['stat_point']}, '{save_data['stats']}', '{save_data['skills']}', '{save_data['inventory']}', {save_data['encounter_id']}, {save_data['combat_ready']}, {save_data['turn_ready']}, '{save_data['combat_claims']}');")
 
             else:
                 # Char exists, Update
@@ -171,54 +214,17 @@ class Entity(GameSystem):
                             f"mhp = {save_data['mhp']}, mmp = {save_data['mmp']}, msp = {save_data['msp']}, hp = {save_data['hp']}, mp = {save_data['mp']}, sp = {save_data['sp']}, ac = {save_data['ac']}, "
                             f"cur_exp = {save_data['cur_exp']}, req_exp = {save_data['req_exp']}, "
                             f"raw_stats = '{save_data['raw_stats']}', stat_point = {save_data['stat_point']}, stats = '{save_data['stats']}', "
-                            f"skills = '{save_data['skills']}', inventory = '{save_data['inventory']}', combat_ready = {save_data['combat_ready']}, combat_claims = '{save_data['combat_claims']}' "
+                            f"skills = '{save_data['skills']}', inventory = '{save_data['inventory']}', encounter_id = {save_data['encounter_id']}, combat_ready = {save_data['combat_ready']}, turn_ready = {save_data['turn_ready']}, combat_claims = '{save_data['combat_claims']}' "
                             f"WHERE uid = \"{save_data['uid']}\";")
             
 
             self.db_cursor.execute(query)
 
-    def load_data(self, vars):
-        self.entity_id = vars['uid']
-        self.ent_type = vars["ent_type"]
-        self.name = vars['name']
-        self.surname = vars['surname']
-        self.gender = vars['gender']
-
-        if self.gender == "Female":
-            self.pronoun_self = "her"
-        else:
-            self.pronoun_self = "his"
-
-        self.race = vars['race']
-        self.height = vars['height']
-        self.weight = vars['weight']
-        self.nsfw = vars['nsfw']
-        self.description = vars['description']
-        self.backstory = vars['backstory']
-        self.char_role = Role(vars['char_role'])
-        self.char_level = vars['char_level']
-        self.role_level = vars['role_level']
-        self.mhp = vars['mhp']
-        self.mmp = vars['mmp']
-        self.msp = vars['msp']
-        self.hp = vars['hp']
-        self.mp = vars['mp']
-        self.sp = vars['sp']
-        self.ac = vars['ac']
-        self.cur_exp = vars['cur_exp']
-        self.req_exp = vars['req_exp']
-        self.stat_point = vars['stat_point']
-        self.raw_stats = json.loads(vars['raw_stats'])
-        self.stats = json.loads(vars['stats'])
-        self.skills = json.loads(vars['skills'])
-        self.inventory = Inventory(json.loads(vars['inventory']))
-        self.combat_ready = vars['combat_ready']
-        self.combat_claims = json.loads(vars['combat_claims'])
-    
     def delete(self, user_id: int):
         user_id = self.entity_id
         ent_type = self.ent_type
 
+        # Fix id for characters
         if ent_type == 'Character':
             if not user_id.startswith('@'):
                 user_id = '@' + user_id + ''
@@ -249,34 +255,9 @@ class Entity(GameSystem):
 
         return character_description[0]
     
-    def use_ability(self, ability_name = None, targets=[]):
-        if self.combat_ready == 0:
-            return "was defeated in this battle and needs to recover"
-
-        if self.ent_type == 'Enemy' and ability_name is None:
-            abilities = []
-
-            for ability in self.get_abilities():
-                if ability['name'] == 'Defend':
-                    continue
-                if ability['name'] == 'Pat':
-                    continue
-
-                abilities.append(ability)
-
-            random_index = random.randint(0, len(abilities) - 1)
-            ability = abilities[random_index]
-            ability_name = ability['name']
-
-        if type(targets) is not list:
-            if targets is not None:
-                targets = [targets]
-
-            else:
-                targets = []
-
-        return self.char_role.use_ability(self, self.mp, self.sp, ability_name, targets)    
-
+    
+    
+    # Level and Stats handle
     def check_level_up(self, force = False):
         leveled = False
 
@@ -332,68 +313,51 @@ class Entity(GameSystem):
         self.sp = self.msp
         self.combat_ready = 1
     
-    def apply_dmg(self, dmg_amt):
-        drops = {}
+    def roll_stats(self, result_type='text'):
+        dice = Dice("d6")
+        roll = 0
+        results = []
+        result_values = []
 
-        if self.hp >= dmg_amt:
-            self.hp = self.hp - dmg_amt
+        while roll < 6:
+            rolled = dice.roll(4)
+            result = sum(sorted(rolled)[-3:])
+            results.append(str(rolled) + "(" + str(result) + ")")
+            result_values.append(result)
+
+            roll += 1
+
+        result_values.sort(reverse=True)
+        self.set_raw_stats(result_values)
+
+        if result_type == 'text':
+            return results
         else:
-            self.hp = 0
-
-        # Calc and process drops
-        if self.hp == 0:
-            self.combat_ready = 0
-
-            for tmp_entity_id in self.combat_claims:
-                # Recalculate the drops for every "party" member
-                drops = self.drop_items()
-
-                tmp_entity_id = str(tmp_entity_id)
-                tmp_entity = Entity()
-
-                if tmp_entity_id.startswith('@'):
-                    tmp_entity.ent_type = 'Character'
-
-                else:
-                    tmp_entity.ent_type = 'Enemy'
-
-                tmp_entity = tmp_entity.load(tmp_entity_id)
-                tmp_entity.loot_items(drops)
-                tmp_entity.save()
-
-            if self.ent_type == "Character":
-                self.save(self.entity_id)
-
-            if self.ent_type == "Enemy":
-                self.delete(self.entity_id)
-
-        else:
-            self.save(self.entity_id)
-
-
-        return drops
-
-    def apply_heal(self, heal_amt):
-        total_hp_after_heal = self.hp + heal_amt
-
-        if total_hp_after_heal > self.mhp:
-            self.hp = self.mhp
-        else:
-            self.hp = total_hp_after_heal
-
-        self.save(self.entity_id)
-
-    def revive(self):
-        heal = 0
-
-        if self.combat_ready == 0:
-            heal = int(self.mhp * 0.20)
-            self.hp = heal
-            self.combat_ready = 1
-            self.save()
-
-        return heal
+            return result_values
     
+    def roll_dice(self, dice_type, quantity=1):
+        dice = Dice(dice_type)
+        return dice.roll(quantity)
+
+    def has_unspent_stats(self):
+        """
+        Docstring for has_unspent_stats
+        
+        :return: True if the character has unspent stats, otherwise False
+        :rtype: bool
+        """
+        
+        if len(self.raw_stats) > 0:
+            return True
+        
+        if self.stat_point > 0:
+            return True
+        
+        return False
+    
+    
+    
+    # Loot handle
     def drop_items(self):
         inventory = self.inventory.get_items()
 
@@ -440,7 +404,7 @@ class Entity(GameSystem):
 
         return drops
 
-    def loot_items(self, items: dict):
+    def loot_items(self, items: dict, enemy_claim_id = None):
         if type(items) is not dict:
             items = {}
 
@@ -460,55 +424,121 @@ class Entity(GameSystem):
                 if len(self.inventory.items['pouch']) < self.inventory.get_max_slots():
                     for i in item:
                         self.inventory.items['pouch'].append(i)
+
+        if enemy_claim_id is not None:
+            self.remove_combat_claim(enemy_claim_id)
         
         self.save(self.entity_id)
     
-    def roll_stats(self, result_type='text'):
-        dice = Dice("d6")
-        roll = 0
-        results = []
-        result_values = []
-
-        while roll < 6:
-            rolled = dice.roll(4)
-            result = sum(sorted(rolled)[-3:])
-            results.append(str(rolled) + "(" + str(result) + ")")
-            result_values.append(result)
-
-            roll += 1
-
-        result_values.sort(reverse=True)
-        self.set_raw_stats(result_values)
-
-        if result_type == 'text':
-            return results
+    
+    
+    # Battle handle
+    def check_encounter(self):
+        if self.encounter_id == 0:
+            return False
         else:
-            return result_values
-    
-    def roll_dice(self, dice_type, quantity=1):
-        dice = Dice(dice_type)
-        return dice.roll(quantity)
+            return True
 
-    def has_unspent_stats(self):
-        """
-        Docstring for has_unspent_stats
-        
-        :return: True if the character has unspent stats, otherwise False
-        :rtype: bool
-        """
-        
-        if len(self.raw_stats) > 0:
-            return True
-        
-        if self.stat_point > 0:
-            return True
-        
-        return False
-    
     def add_combat_claim(self, entity_id):
         if entity_id not in self.combat_claims:
             self.combat_claims.append(entity_id)
             self.save()
+
+    def remove_combat_claim(self, entity_id):
+        if entity_id in self.combat_claims:
+            for index, claim_id in enumerate(self.combat_claims):
+                if claim_id == entity_id:
+                    self.combat_claims.pop(index)
+
+            self.save()
+
+    def remove_all_combat_claims(self):
+        self.combat_claims = []
+        self.save()
+    
+    def use_ability(self, ability_name = None, targets=[]):
+        # Make sure the target is formatted to list (Party)
+        if type(targets) is not list:
+            if targets is not None:
+                targets = [targets]
+
+            else:
+                targets = []
+        
+        # Defeat Check
+        if self.combat_ready == 0:
+            return "was defeated in this battle and needs to recover"
+        
+        # Perform enemy logic
+        if self.ent_type == 'Enemy' and ability_name is None:
+            ability_name = self.perform_enemy_battle_logic()
+
+        # Ask the role class to do ability check and dmg calcs
+        return self.char_role.use_ability(self, self.mp, self.sp, ability_name, targets)
+    
+    def apply_dmg(self, dmg_amt):
+        drops = {}
+
+        if self.hp >= dmg_amt:
+            self.hp = self.hp - dmg_amt
+        else:
+            self.hp = 0
+
+        # Calc and process drops
+        if self.hp == 0:
+            self.combat_ready = 0
+
+            for tmp_entity_id in self.combat_claims:
+                # Recalculate the drops for every "party" member
+                drops = self.drop_items()
+
+                tmp_entity_id = str(tmp_entity_id)
+                tmp_entity = Entity()
+
+                if tmp_entity_id.startswith('@'):
+                    tmp_entity.ent_type = 'Character'
+
+                else:
+                    tmp_entity.ent_type = 'Enemy'
+
+                tmp_entity = tmp_entity.load(tmp_entity_id)
+                tmp_entity.loot_items(drops, self.entity_id)
+                tmp_entity.save()
+
+            if self.ent_type == "Character":
+                self.save(self.entity_id)
+
+            if self.ent_type == "Enemy":
+                self.delete(self.entity_id)
+
+        else:
+            self.save(self.entity_id)
+
+
+        return drops
+
+    def apply_heal(self, heal_amt):
+        total_hp_after_heal = self.hp + heal_amt
+
+        if total_hp_after_heal > self.mhp:
+            self.hp = self.mhp
+        else:
+            self.hp = total_hp_after_heal
+
+        self.save(self.entity_id)
+
+    def revive(self):
+        heal = 0
+
+        if self.combat_ready == 0:
+            heal = int(self.mhp * 0.20)
+            self.hp = heal
+            self.combat_ready = 1
+            self.save()
+
+        return heal
+    
+    
 
     # Equipment handle
     def equip_item(self, equip_type, equip_index):
@@ -525,6 +555,17 @@ class Entity(GameSystem):
                 return e
 
             equip = self.inventory.items['pouch'].pop(equip_index)
+
+            # Restructure equip as don't need all the fields when equipped
+            equip = {
+                "id": equip['id'],
+                "name": equip['name'],
+                "description": equip['description'],
+                "attack_type": equip['attack_type'],
+                "dice_roll": equip['dice_roll'],
+                "base_drop_rate": equip['base_drop_rate'],
+                "effects": equip['effects']
+            }
             self.inventory.items['equipment'][equip_type] = equip
 
             self.calc_stats()
@@ -543,7 +584,7 @@ class Entity(GameSystem):
         if equip_type in equipment.keys():
             equip = self.inventory.get_items()['equipment'][equip_type]
 
-            if equip['name'] != 'Bare hands' and equip['name'] != 'Empty':
+            if equip['name'] not in ['Bare hands', 'Empty']:
                 if delete == False:
                     self.inventory.items['pouch'].append(equip)
 
@@ -556,6 +597,8 @@ class Entity(GameSystem):
         else:
             return "Inventory slot doesn't exist!"
 
+    
+    
     # =========================================================
     # GETS
     # =========================================================
@@ -582,6 +625,9 @@ class Entity(GameSystem):
     
     def get_raw_stats(self):
         return self.raw_stats
+    
+    def get_encounter_id(self):
+        return self.encounter_id
     
     def get_skills(self):
         return self.skills
@@ -612,12 +658,41 @@ class Entity(GameSystem):
     def get_items(self):
         return self.inventory.get_items()
     
+    
+    
     # =========================================================
     # SETS
     # =========================================================
     def set_ent_type(self, ent_type):
         self.ent_type = ent_type
 
+    def set_nsfw(self, nsfw):
+        if nsfw is None:
+            nsfw = 0
+
+        elif type(nsfw) is str:
+            if nsfw == 'True' or nsfw == '1':
+                nsfw = 1
+            else:
+                nsfw = 0
+        
+        elif type(nsfw) is int:
+            if nsfw >= 1:
+                nsfw = 1
+            else:
+                nsfw = 0
+
+        elif type(nsfw) is bool:
+            if nsfw == True:
+                nsfw = 1
+            else:
+                nsfw = 0
+        
+        else:
+            nsfw = 0
+
+        self.nsfw = nsfw
+    
     def set_entity_id(self, entity_id):
         if type(entity_id) is not str:
             entity_id = str(entity_id)
@@ -690,10 +765,25 @@ class Entity(GameSystem):
         if equip_type in equipment.keys():
             equip = ""
 
+            # Find the db equip
+
             if equip_type == 'main_weapon':
-                equip = {"id": 7, "name": "Bare hands", "item_type": "weapon", "description": "", "attack_type": "melee", "dice_roll": "1d4", "base_drop_rate": 0, "base_drop_rate": 0, "base_drop_rate": 0, "effects": {}}
+                query = "SELECT * FROM Items WHERE item_type = 'weapon' and name = 'Bare hands'"
+                self.db_cursor.execute(query)
+                result = self.db_cursor.fetchall()
+
+                if len(result) >= 1:
+                    #equip = {"id": 7, "name": "Bare hands", "item_type": "weapon", "description": "", "attack_type": "melee", "dice_roll": "1d4", "base_drop_rate": 0, "base_drop_rate": 0, "base_drop_rate": 0, "effects": {}}
+                    equip = result[0]
             else:
-                equip = {"id": 0, "name": "Empty", "item_type": "equip", "description": "", "attack_type": "", "dice_roll": "", "base_drop_rate": 0, "base_drop_rate": 0, "base_drop_rate": 0, "effects": {}}
+                query = f"SELECT * FROM Items WHERE item_type = '' and name = 'Empty'"
+                self.db_cursor.execute(query)
+                result = self.db_cursor.fetchall()
+
+                if len(result) >= 1:
+                    #equip = {"id": 0, "name": "Empty", "item_type": "equip", "description": "", "attack_type": "", "dice_roll": "", "base_drop_rate": 0, "base_drop_rate": 0, "base_drop_rate": 0, "effects": {}}
+                    equip = result[0]
+                    equip['item_type'] = equip_type
 
             self.inventory.items['equipment'][equip_type] = equip
 

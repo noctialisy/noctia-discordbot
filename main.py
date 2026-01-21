@@ -9,6 +9,7 @@ from discord.commands import option
 # -------------------------------------
 from game_classes.Enemy import Enemy
 from game_classes.Character import Character
+from game_classes.Encounter import Encounter
 from game_classes.Dice import Dice
 
 # Main bot code
@@ -422,10 +423,14 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
             embed.add_field(name='Necklace', value=entity.inventory.items['equipment']['necklace']['name'], inline=True)
 
             embed.add_field(name="Pouch", value="", inline=False)
-            embed.add_field(name="===", value="", inline=False)
-            for item in entity.inventory.items['pouch']:
-                embed.add_field(name=str(item), value='', inline=False)
 
+            str_pouch = ""
+            index = 1
+            for item in entity.inventory.items['pouch']:
+                str_pouch += str(index) + " - Name: " + str(item['name']) + " | Description: " + str(item['description']) + " | Drop rate: " + str(item['base_drop_rate']) + "\n"
+                index += 1
+
+            embed.add_field(name="===", value=str_pouch, inline=False)
             embed.set_author(name="RP Char card")
 
             await ctx.response.send_message("Here's your character's inventory!", embed=embed, ephemeral=silent)
@@ -489,10 +494,19 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
                 title = entity.name + " entity_id: " + entity.entity_id
 
             #user_avatar = ctx.author.avatar
-            string_result = title + "\n"
-            string_result += "===" + "\n\n"
+            embed = discord.Embed(
+                title=title,
+                description='',
+                color=discord.Color.blurple()
+            )
+            embed.add_field(name="Abilities", value="", inline=False)
+
+            string_result = []
+            string_result_index = 0
 
             for item in entity.get_abilities():
+                tmp_string = ""
+
                 if item['type'] != '':
                     ability_class = str(item['type']).split('_')[0]
                     ability_type = str(item['type']).split('_')[1]
@@ -501,13 +515,28 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
                     ability_class = 'melee'
                     ability_type = 'physical'
 
-                string_result += "**" + str(item['name']) + "**  - " + " **[" + ability_class + " " + ability_type + "] [" + str(item['dice_roll']) + "]**" + "\n"
-                string_result += item['description'] + "\n"
-                string_result += "Buffs: " + str(item['positive_effects']) + "\n"
-                string_result += "Debuffs: " + str(item['negative_effects']) + "\n"
-                string_result += "===" + "\n\n"
+                tmp_string += "**" + str(item['name']) + "**  - " + " **[" + ability_class + " " + ability_type + "] [" + str(item['dice_roll']) + "]**" + "\n"
+                tmp_string += item['description'] + "\n"
+                tmp_string += "Buffs: " + str(item['positive_effects']) + "\n"
+                tmp_string += "Debuffs: " + str(item['negative_effects']) + "\n"
+                tmp_string += "===" + "\n\n"
+            
+                if string_result == []:
+                    string_result.append(tmp_string)
+                
+                elif (len(string_result[string_result_index]) + len(tmp_string)) < 1024:
+                    string_result[string_result_index] += tmp_string
 
-            await ctx.response.send_message("Here's your character's ability list!\n\n" + string_result, ephemeral=silent)
+                else:
+                    string_result_index += 1
+                    string_result.append(tmp_string)
+                    
+            for item in string_result:
+                embed.add_field(name="===", value=item, inline=False)
+
+            embed.set_author(name="RP Char card")
+
+            await ctx.response.send_message("Here's your character's ability list!", embed=embed, ephemeral=silent)
 
             if entity.ent_type == 'Character' and entity.has_unspent_stats() == True:
                 stat_points = entity.get_stat_points()
@@ -575,6 +604,10 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
         user_id = '@' + str(ctx.author.id)
         character = Character()
         character = character.load(user_id)
+        character_ability_res = ''
+        encounter = False
+        turn_end = False
+        encounter_ended = False
 
         # Character exists or no (Can't do action if not exist)
         if character != Character().NO_CHARACTER_FOUND_ERROR:
@@ -615,8 +648,35 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
                     return
             
 
-            # Get the skill
-            character_ability_res = character.use_ability(ability_name, [target_character])
+            # Check if the target is in another encounter
+            if target_character.encounter_id != 0:
+                if character.encounter_id == 0 or character.encounter_id != target_character.encounter_id:
+                    character_ability_res = "That target is in another battle already and you're not part of it!"
+                    await ctx.response.send_message(character_ability_res, ephemeral=False)
+                    return
+                
+                else:
+                    encounter =True
+
+            # Check if it is in an encoutner
+            if character.encounter_id != 0:
+                if character.turn_ready == 0:
+                    character_ability_res = "can't do any more actions this turn"
+
+                else:
+                    character.turn_ready = 0
+                    character.save()
+                    encounter = Encounter()
+                    encounter.load(character.encounter_id)
+
+                    if encounter.check_end_turn():
+                        turn_end = True
+
+                    character_ability_res = character.use_ability(ability_name, [target_character])
+
+            else:
+                character_ability_res = character.use_ability(ability_name, [target_character])
+
 
             if type(character_ability_res) == str:
                 await ctx.response.send_message(f"{character.name} {character_ability_res}", ephemeral=False)
@@ -640,15 +700,26 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
                     
                     elif result == "success_win":
                         action_result = action_result + "  - " + lines["success"] + "\n"
+                        encounter_ended = True
 
                     elif result == "fail":
-                        action_result = action_result + "  - " + lines["fail"] + "\n"
+                        enemy_action_result = ability_result[0][4]
+                        action_result = action_result + "  - " + lines["fail"] + "\n\n" + enemy_action_result
                     
                     else:
                         action_result = action_result + "  - " + target_name + " Cannot continue to fight...\n"
 
                     if result == "success_win":
                         action_result = action_result + "  - " + target_name + " was defeated!\n"
+
+                
+                if encounter:
+                    if encounter_ended:
+                        encounter.finish()
+                    else:
+                        if turn_end:
+                            action_result += "The turn has ended and a new one started!\n"
+                            encounter.start_turn()
 
                 # Print the action results
                 await ctx.response.send_message(f"{action_result}", ephemeral=False)
@@ -677,7 +748,7 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
         gm_role = discord.utils.find(lambda r: r.name == 'GM', ctx.guild.roles)
         
         if gm_role not in author.roles:
-            await ctx.response.send_message("You are not a GM so can't spawn enemies!.", ephemeral=False)
+            await ctx.response.send_message("You are not a GM so can't spawn enemies!", ephemeral=False)
             return
 
         # Create a new enemy
@@ -699,7 +770,7 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
         enemy.rest()
         enemy.save(enemy_id)
         embed = discord.Embed(
-            title=enemy.name + " level [" + str(enemy.char_level) + "]" + " id: [" + str(enemy.entity_id) + "]",
+            title=enemy.name + " " + enemy.surname + " - level [" + str(enemy.char_level) + "]" + " id: [" + str(enemy.entity_id) + "]",
             description=enemy.description,
             color=discord.Color.blurple()
         )
@@ -716,6 +787,39 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
         embed.set_author(name="RP Char card")
 
         await ctx.response.send_message("Here's your new generated enemy!\nUse the enemy_id when using action to target this enemy.", embed=embed, ephemeral=False)
+
+    
+    # Start a battle
+    # -------------------------------------
+    @bot.slash_command(
+        name="rp_battle_start",
+        description="Start a battle",
+        guild_ids=[discord_main_guild_id]
+    )
+    @option("party_list", description="List of character id in the encounter")
+    @option("enemy_list", description="List of enemy id in the encounter")
+    async def rp_battle_start(ctx, party_list: str, enemy_list: str):
+        author = ctx.author
+        user_id = ctx.author.id
+        gm_role = discord.utils.find(lambda r: r.name == 'GM', ctx.guild.roles)
+        
+        if gm_role not in author.roles:
+            await ctx.response.send_message("You are not a GM so can't start a battle!", ephemeral=True)
+            return
+        
+        try:
+            encounter = Encounter()
+            encounter.create('Battle', party_list, enemy_list)
+
+
+        except Exception as e:
+            print("Battle creation failed!" + str(e))
+            await ctx.response.send_message("Battle creation failed!", ephemeral=True)
+            return
+
+
+        await ctx.response.send_message("Battle started between " + str(encounter.enemy_party) + " and " + str(encounter.friendly_party), ephemeral=False)
+        return
 
     
     # Roll a dice (DnD style)

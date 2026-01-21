@@ -34,22 +34,25 @@ Test requires 2 databases:
 - Roll dices (base ones or using your RP character if you have one)
 - Battle each other (through the use of abilities)
 - Spawn an enemy (Only people that have the GM role) [Can spawn with stats or randomly]
+- Battle with enemies (Enemies will react to your actions)
+- Create battle encoutners (enter battle with a team and lock the enemy esclusively to that team)
 - Get exp by winning a fight
 - Level up
-
 
 ## In the future:
 - Having the lore from my wiki expanded and added into the game
 - Allowing people to start threads for their RP sessions (adventures)
-- add a way for enemy to select loot at random (Probably will need locations to pick loot types and such)
+- Add a way for enemy to select loot at random (Probably will need locations to pick loot types and such)
 - Generating stories using AI (at first until I can write down an algorithm to procedurally generate things)
 - Eventually (probably) releasing the bot to the public so people will have their D&D game engine for D&D based games that can run in discord, a browser or a standalone game app
 - Splitting the game code and the bot so that the game can be ported elsewhere
 
 Currently working on:
 - Database and items
-- Battle system
-
+- Better battle system
+- Party system
+- Positive/Negative status effects
+- Trading system
 
 ## Available and tested commands for now:
 
@@ -58,11 +61,12 @@ Currently working on:
 - /check_inventory -> Will return your character's inventory
 - /check_abilities -> Will give you a list of your character's abilities
 - /set_character_stats_order -> Will allow you to set the character stats order for your character based on your initial rolls
-- /delete_character -> Deletes your character so you can start over. This is unreverable.
+- /delete_character -> Deletes your character so you can start over. This is unreversible.
 
 - /rp_rest -> Make your character rest (This restores HP/MP/SP and allows you to level up)
 - /rp_action -> Allow you to cast a skill on self or a target (Base skills are Attack, Defend, Heal, Pat... etc)
-- /rp_spawn_enemy -> Spawns an Enemy either randomly or with set stats (Can only be used by GMs - People with GM role)
+- /rp_spawn_enemy -> [GM only] Spawns an Enemy either randomly or with set stats
+- /rp_start_battle -> [GM only] Start a set encoutner between players and enemies
 
 - /roll_dice -> Roll one or more D&D dices (If you have an RP character those rolls take into account your stats, otherwise are generic)
 

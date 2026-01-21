@@ -168,7 +168,7 @@ class Role(GameSystem):
                 entity_roll = entity_roll + entity_modifier
 
                 if target.get_combat_ready() == 0:
-                    action_results.append([target.name, 'fail_dead', 0])
+                    action_results.append([target.name, 'fail_dead', 0, roll_explains, enemy_action_result])
 
                 elif entity_roll >= target_ac:
                     skill_dmg_result = 0
@@ -208,48 +208,18 @@ class Role(GameSystem):
                     target.add_combat_claim(entity.get_id())
                     drops = target.apply_dmg(dmg)
                     action_res_string = 'success'
-                    enemy_alive = True
 
                     if drops != {}:
                         action_res_string = 'success_win'
-                        enemy_alive = False
-
-                    # Perform Battle Enemy logic
-                    if enemy_alive and target.ent_type == 'Enemy':
-                        enemy_action = target.use_ability(None, [entity])
-
-                        if type(enemy_action) == str:
-                            enemy_action_result = ""
-                            print(enemy_action)
-
-                        else:
-                            enemy_action_result = f"*{enemy_action[0][1]["cast"]}!*\n"
-
-                            for ability_result in enemy_action:
-                                target_name = ability_result[0][0]
-                                result = ability_result[0][1]
-                                lines = ability_result[1]
-
-                            if result == "success" or result == "success_win":
-                                enemy_action_result = enemy_action_result + "  - " + lines["success"] + "\n"
-
-                            elif result == "fail":
-                                enemy_action_result = enemy_action_result + "  - " + lines["fail"] + "\n"
-                            
-                            else:
-                                enemy_action_result = enemy_action_result + "  - " + target_name + " Cannot continue to fight...\n"
-
-                            if result == "success_win":
-                                enemy_action_result = enemy_action_result + "  - " + target_name + " was defeated!\n"
 
                     else:
-                        enemy_action_result = ""
-
-
+                        # calc enemy action only if still alive
+                        enemy_action_result = self.calculate_enemy_action(target, entity)
 
                     action_results.append([target.name, action_res_string, dmg, roll_explains, enemy_action_result])
                 
                 else:
+                    enemy_action_result = self.calculate_enemy_action(target, entity)
                     action_results.append([target.name, 'fail', 0, roll_explains, enemy_action_result])
 
         else:
@@ -301,6 +271,10 @@ class Role(GameSystem):
                 
                 print(roll_explains)
                 target.apply_heal(heal_amt)
+
+                if target.ent_type == 'Enemy':
+                    enemy_action_result = self.calculate_enemy_action(target, entity)
+
                 action_results.append([target.name, 'success', heal_amt, roll_explains, enemy_action_result])
 
         else:
@@ -308,7 +282,7 @@ class Role(GameSystem):
 
         return action_results
     
-    
+    # Handle revives
     def calculate_revive(self, entity, entity_targets=[], ability_class="melee", ability_roll=""):
         action_results = []
         roll_explains = ''
@@ -340,6 +314,41 @@ class Role(GameSystem):
             action_results.append(['empty', 'fail', 0, roll_explains, enemy_action_result])
 
         return action_results
+    
+    # Handles enemy actions
+    def calculate_enemy_action(self, target, entity):
+        enemy_action_result = ""
+
+        if target.ent_type != 'Enemy' or target.combat_ready == 0:
+            return enemy_action_result
+
+        enemy_action = target.use_ability(None, [entity])
+
+        if type(enemy_action) == str:
+            enemy_action_result = ""
+            print(enemy_action)
+
+        else:
+            enemy_action_result = f"*{enemy_action[0][1]["cast"]}!*\n"
+
+            for ability_result in enemy_action:
+                target_name = ability_result[0][0]
+                result = ability_result[0][1]
+                lines = ability_result[1]
+
+            if result == "success" or result == "success_win":
+                enemy_action_result = enemy_action_result + "  - " + lines["success"] + "\n"
+
+            elif result == "fail":
+                enemy_action_result = enemy_action_result + "  - " + lines["fail"] + "\n"
+            
+            else:
+                enemy_action_result = enemy_action_result + "  - " + target_name + " Cannot continue to fight...\n"
+
+            if result == "success_win":
+                enemy_action_result = enemy_action_result + "  - " + target_name + " was defeated!\n"
+
+        return enemy_action_result
 
 
     

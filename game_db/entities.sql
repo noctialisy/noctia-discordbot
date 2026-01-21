@@ -8,7 +8,7 @@ CREATE TABLE `Entities` (
   `race` text DEFAULT NULL,
   `height` int(11) DEFAULT NULL,
   `weight` int(11) DEFAULT NULL,
-  `nsfw` int(11) DEFAULT NULL,
+  `nsfw` int(11) DEFAULT 0,
   `description` text DEFAULT NULL,
   `backstory` text DEFAULT NULL,
   `char_role` text DEFAULT NULL,
@@ -28,7 +28,9 @@ CREATE TABLE `Entities` (
   `stats` text DEFAULT NULL,
   `skills` text DEFAULT NULL,
   `inventory` text DEFAULT NULL,
+  `encounter_id` int(11) NOT NULL DEFAULT 0,
   `combat_ready` int(11) DEFAULT 1,
+  `turn_ready` int(11) DEFAULT 1,
   `combat_claims` text DEFAULT NULL,
   PRIMARY KEY (`id`)
 );

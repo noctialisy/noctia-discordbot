@@ -52,7 +52,7 @@ class Character(Entity):
         
         self.race = race
         self.gender = gender
-        self.nsfw = nsfw
+        self.set_nsfw(nsfw)
 
         if self.gender == "Female":
             self.pronoun_self = "her"
@@ -62,3 +62,13 @@ class Character(Entity):
         self.description = f"You are {name} a {gender} {race}"
 
         return "Creation: success!"
+    
+    def use_ability(self, ability_name = None, targets=[]):
+        ability_result = super().use_ability(ability_name, targets)
+
+        # Check if character is in a battle or another encounter
+        # Not sure if this should effectively happen
+        
+
+
+        return ability_result

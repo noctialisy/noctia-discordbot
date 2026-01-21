@@ -1,5 +1,7 @@
 import random
 
+from faker import Faker
+
 from .Entity import Entity
 from .Role import Role
 from .Inventory import Inventory
@@ -24,6 +26,7 @@ class Enemy(Entity):
     # =========================================================
     def create(self, level = None, name = None, race = None, gender = None, role = None, nsfw = False):
         self.ent_type = "Enemy"
+        fake = Faker()
         
         if type(name) is not str:
             name = 'Amelia'
@@ -57,14 +60,18 @@ class Enemy(Entity):
         # Create the enemy
         self.race = race
         self.gender = gender
-        self.nsfw = nsfw
-
+        self.set_nsfw(nsfw)
         self.set_role(role)
 
         if self.gender == "Female":
             self.pronoun_self = "her"
+            self.name = fake.first_name_female()
+            self.surname = fake.last_name_female()
         else:
             self.pronoun_self = "his"
+            self.name = fake.first_name_male()
+            self.surname = fake.last_name_male()
+            
 
         rolled_stats = self.roll_stats('stats')
         
@@ -136,6 +143,36 @@ class Enemy(Entity):
             self.set_stat(1, self.char_role.get_sub_stat())
             self.set_stat(1, self.STATS[random.randint(0, len(self.STATS) - 1)])
             self.calc_stats()
+    
+    # Takes care of the battle logic for the enemy and returns the selected ability
+    def use_ability(self, ability_name = None, targets=[]):
+        ability_name = self.perform_enemy_battle_logic()
+        return super().use_ability(ability_name, targets)
+    
+    def perform_enemy_battle_logic(self):
+        abilities = []
+
+        for ability in self.get_abilities():
+            if ability['name'] == 'Defend':
+                continue
+            if ability['name'] == 'Pat':
+                continue
+            if ability['name'] == 'Revive':
+                continue
+            if ability['name'] == 'Heal':
+                continue
+
+            abilities.append(ability)
+
+        # Check on HP and heal
+        if self.hp <= round(self.mhp * 0.25):
+            ability_name = 'Pat'
+
+        random_index = random.randint(0, len(abilities) - 1)
+        ability = abilities[random_index]
+        ability_name = ability['name']
+
+        return ability_name
     
     def test(self):
         pass
