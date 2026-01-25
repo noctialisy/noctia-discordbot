@@ -166,8 +166,6 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
                 ephemeral=True
             )
 
-            # Save character
-            character.save(user_id)
             await ctx.followup.send(f"Your character has been created and saved!.", ephemeral=True)
 
     
@@ -238,7 +236,6 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
 
             character.calc_stats()
 
-            character.save(user_id)
             await ctx.response.send_message("RAW Stat composition assigned: " + str(character.get_stats()), ephemeral=True)
 
         else:
@@ -270,7 +267,6 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
             # Check if the character has the stats they want to assign
             if character.get_stat_points() >= stat_value:
                 character.set_stat(stat_value, character_stat)
-                character.save(user_id)
                 await ctx.response.send_message("Character stats assigned and saved!", ephemeral=True)
 
             else:
@@ -336,7 +332,7 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
             embed.add_field(name="Wisdom", value=entity.stats['wisdom'], inline=True)
             embed.add_field(name="Charisma", value=entity.stats['charisma'], inline=True)
             embed.add_field(name="Current status", value="")
-            if entity.combat_ready == 0:
+            if entity.get_combat_ready() == 0:
                 embed.add_field(name="Exhausted", value="Can't battle and needs rest.", inline=True)
             
             embed.add_field(name="", value="====", inline=False)
@@ -573,7 +569,6 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
         # Character existence check
         if character != character.NO_CHARACTER_FOUND_ERROR:
             character.rest()
-            character.save(user_id)
 
             if character.pronoun_self == 'her':
                 pron = 'she'
@@ -649,8 +644,8 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
             
 
             # Check if the target is in another encounter
-            if target_character.encounter_id != 0:
-                if character.encounter_id == 0 or character.encounter_id != target_character.encounter_id:
+            if target_character.get_encounter_id() != 0:
+                if character.get_encounter_id() == 0 or character.get_encounter_id() != target_character.get_encounter_id():
                     character_ability_res = "That target is in another battle already and you're not part of it!"
                     await ctx.response.send_message(character_ability_res, ephemeral=False)
                     return
@@ -659,15 +654,14 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
                     encounter =True
 
             # Check if it is in an encoutner
-            if character.encounter_id != 0:
-                if character.turn_ready == 0:
+            if character.get_encounter_id() != 0:
+                if character.get_turn_ready() == 0:
                     character_ability_res = "can't do any more actions this turn"
 
                 else:
-                    character.turn_ready = 0
-                    character.save()
+                    character.set_turn_ready(0)
                     encounter = Encounter()
-                    encounter.load(character.encounter_id)
+                    encounter.load(character.get_encounter_id())
 
                     if encounter.check_end_turn():
                         turn_end = True
@@ -768,7 +762,6 @@ with open('./settings.json', 'r', encoding='utf-8') as settings_file:
         enemy = enemy.create(level, name, race, gender, role, nsfw)
         enemy.set_entity_id(str(enemy_id))
         enemy.rest()
-        enemy.save(enemy_id)
         embed = discord.Embed(
             title=enemy.name + " " + enemy.surname + " - level [" + str(enemy.char_level) + "]" + " id: [" + str(enemy.entity_id) + "]",
             description=enemy.description,

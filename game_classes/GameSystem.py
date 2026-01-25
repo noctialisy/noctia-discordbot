@@ -9,9 +9,9 @@ class GameSystem:
     db_cursor = ""
     settings = []
 
-    RACES = ["Human", "Elf", "Catfolk", "Kitsune", "Lupine", "Orc"]
     GENDERS = ["Male", "Female"]
     STATS = ["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"]
+    RACES = []
     ROLES = []
     MAX_LEVEL = 10
 
@@ -36,6 +36,7 @@ class GameSystem:
 
         )
         self.db_cursor = self.db_connection.cursor(dictionary=True)
+        self.RACES = self.get_db_races()
         self.ROLES = self.get_db_roles()
 
     
@@ -62,7 +63,19 @@ class GameSystem:
         return result
     
     def get_db_roles(self):
-        query = 'SELECT name FROM Roles;'
+        query = 'SELECT DISTINCT name FROM Roles;'
+        self.db_cursor.execute(query)
+        tmp_results = self.db_cursor.fetchall()
+
+        results = []
+
+        for tmp in tmp_results:
+            results.append(tmp['name'])
+
+        return results
+    
+    def get_db_races(self):
+        query = 'SELECT DISTINCT name FROM Races;'
         self.db_cursor.execute(query)
         tmp_results = self.db_cursor.fetchall()
 

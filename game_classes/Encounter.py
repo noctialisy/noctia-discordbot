@@ -51,10 +51,9 @@ class Encounter(GameSystem):
                 if type(result) is str:
                     print(result)
                 
-                if entity.encounter_id == 0:
-                    entity.encounter_id = self.encounter_id
+                if entity.get_encounter_id() == 0:
+                    entity.set_encounter_id(self.encounter_id)
 
-                entity.save()
                 self.add_friendly(entity.entity_id)
 
 
@@ -70,10 +69,9 @@ class Encounter(GameSystem):
                 entity.ent_type = 'Enemy'
                 entity.load(member_id)
                 
-                if entity.encounter_id == 0:
-                    entity.encounter_id = self.encounter_id
+                if entity.get_encounter_id() == 0:
+                    entity.set_encounter_id(self.encounter_id)
 
-                entity.save()
                 self.add_enemies(entity.entity_id)
             
         else:
@@ -135,13 +133,10 @@ class Encounter(GameSystem):
             if type(result) is str:
                 print(result)
             
-            if entity.encounter_id != 0:
-                entity.encounter_id = 0
-
-            entity.save()
-            self.add_friendly(entity.entity_id)
-
-        
+            if entity.get_encounter_id() != 0:
+                entity.set_encounter_id(0)
+            
+            self.add_friendly(entity.entity_id) 
 
     # check if this turn can end
     def check_end_turn(self):
@@ -152,7 +147,7 @@ class Encounter(GameSystem):
             entity.ent_type = 'Character'
             entity.load(member_id)
 
-            if entity.turn_ready == 0:
+            if entity.get_turn_ready() == 0:
                 continue
             else:
                 can_end = False
@@ -166,8 +161,7 @@ class Encounter(GameSystem):
             entity = Entity()
             entity.ent_type = 'Character'
             entity.load(member_id)
-            entity.turn_ready = 1
-            entity.save()
+            entity.set_turn_ready(1)
     
     # Handles Partecipants
     def add_partecipants(self, friendly, enemies):

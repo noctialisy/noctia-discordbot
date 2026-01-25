@@ -7,8 +7,6 @@ class Role(GameSystem):
     ROLES = []
     role_name = ""
     role_hit_dice = ""
-    role_magic_dice = ""
-    role_special_dice = ""
     role_main_stat = ""
     role_sub_stat = ""
     role_abilities = []
@@ -24,29 +22,34 @@ class Role(GameSystem):
     def __init__(self, role_name :str):
         super().__init__()
 
-        self.ROLES = self.get_db_role_names()
+        try:
+            self.ROLES = self.get_db_role_names()
 
-        if self.ROLES == self.NO_DB_DATA_ERROR:
-            print("Role class had a db fetching error!")
-            self.ROLES = []
+            if self.ROLES == self.NO_DB_DATA_ERROR:
+                print("Role class had a db fetching error!")
+                self.ROLES = []
 
-        if role_name in self.ROLES:
-            self.role_name = role_name
+            if role_name in self.ROLES:
+                self.role_name = role_name
 
-            query = f"SELECT * FROM Roles WHERE name = '{role_name}';"
-            self.db_cursor.execute(query)
-            result = self.db_cursor.fetchall()
+                query = f"SELECT * FROM Roles WHERE name = '{role_name}';"
+                self.db_cursor.execute(query)
+                result = self.db_cursor.fetchall()
 
-            self.role_hit_dice = result[0]['hit_dice']
-            self.role_magic_dice = result[0]['magic_dice']
-            self.role_special_dice = result[0]['special_dice']
-            self.role_main_stat = result[0]['main_stat']
-            self.role_sub_stat = result[0]['sub_stat']
-            self.role_abilities = self.get_db_role_abilities(role_name)
+                self.role_hit_dice = result[0]['hit_dice']
+                self.role_main_stat = result[0]['main_stat']
+                self.role_sub_stat = result[0]['sub_stat']
+                self.role_abilities = self.get_db_role_abilities(role_name)
 
-        else:
-            print("Role class had a db fetching error!")
-            self.role_name = "Not Init"
+            else:
+                raise Exception("Role name not found!")
+
+
+        except Exception as e:
+            error = "Role.init() excepted: " + str(e)
+            print(error)
+            return error
+    
 
     
     # =========================================================
@@ -297,7 +300,7 @@ class Role(GameSystem):
             # Heal all targets
             for target in entity_targets:
 
-                if target.combat_ready != 0:
+                if target.get_combat_ready() != 0:
                     action_results.append([target.name, 'fail', 0, roll_explains, enemy_action_result])
 
                 else:
@@ -319,7 +322,7 @@ class Role(GameSystem):
     def calculate_enemy_action(self, target, entity):
         enemy_action_result = ""
 
-        if target.ent_type != 'Enemy' or target.combat_ready == 0:
+        if target.ent_type != 'Enemy' or target.get_combat_ready() == 0:
             return enemy_action_result
 
         enemy_action = target.use_ability(None, [entity])
@@ -361,12 +364,6 @@ class Role(GameSystem):
     def get_hit_dice(self):
         return self.role_hit_dice
     
-    def get_magic_dice(self):
-        return self.role_magic_dice
-    
-    def get_special_dice(self):
-        return self.role_special_dice
-    
     def get_main_stat(self):
         return self.role_main_stat
     
@@ -377,17 +374,23 @@ class Role(GameSystem):
         return self.role_abilities
     
     def get_db_role_names(self):
-        query = "SELECT name FROM Roles;"
-        self.db_cursor.execute(query)
-        result = self.db_cursor.fetchall()
+        try:
+            query = "SELECT name FROM Roles;"
+            self.db_cursor.execute(query)
+            result = self.db_cursor.fetchall()
 
-        if result == []:
-            return self.NO_DB_DATA_ERROR
-        
-        else:
-            # Return the roles
-            data = map(lambda row: row['name'], result)
-            return list(data)
+            if result == []:
+                raise Exception(self.NO_DB_DATA_ERROR)
+            
+            else:
+                # Return the roles
+                data = map(lambda row: row['name'], result)
+                return list(data)
+            
+        except Exception as e:
+            error = "Role.get_db_role_names() excepted: " + str(e)
+            print(error)
+            return error
 
     def get_db_role_hit_dice(self, role_name):
         query = f"SELECT hit_dice FROM Roles WHERE name = \"{role_name}\";"

@@ -153,7 +153,6 @@ class Test:
                 saved_char_data[key] = value
 
             character.set_entity_id(uid)
-            character.save(uid)
 
             # Load Character
             new_character = Character()
