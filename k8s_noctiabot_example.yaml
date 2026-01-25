@@ -32,5 +32,10 @@ spec:
           - name: PYTHONUNBUFFERED
             value: "1"
 
+        resources:
+          limits:
+            cpu: 500m
+            memory: 512M
+
       imagePullSecrets:
         - name: ${k8s.container.image.secret}
