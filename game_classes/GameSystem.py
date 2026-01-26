@@ -7,7 +7,7 @@ class GameSystem:
     
     db_connection = ""
     db_cursor = ""
-    settings = []
+    settings = {}
 
     GENDERS = ["Male", "Female"]
     STATS = ["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"]
@@ -22,8 +22,22 @@ class GameSystem:
         if db_name is None:
             db_name = 'game_example'
 
-        with open('./settings.json', 'r', encoding='utf-8') as settings_file:
-            self.settings = json.loads(settings_file.read())
+        if os.path.exists('./settings.json'):
+            with open('./settings.json', 'r', encoding='utf-8') as settings_file:
+                self.settings = json.loads(settings_file.read())
+
+        else:
+            self.settings = {
+                "discord.bot.token": os.environ['discord.bot.token'],
+                "discord.test.guild.id": os.environ['discord.test.guild.id'],
+                "discord.main.guild.id": os.environ['discord.main.guild.id'],
+
+                "db_user": os.environ['db_user'],
+                "db_pass": os.environ['db_pass'],
+                "db_host": os.environ['db_host'],
+                "db_port": os.environ['db_port'],
+                "db_name": os.environ['db_name'],
+            }
 
 
         self.db_connection = mariadb.connect(

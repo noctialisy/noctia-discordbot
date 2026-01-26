@@ -22,17 +22,14 @@ def main():
                     exit()
                 
                 if command == "build":
-                    deploy_path = settings["k8s.deploy.path"]
-                    container_image = settings["k8s.container.image"]
-                    img_pull_sec = settings["k8s.container.image.secret"]
-
-                    shutil.copy2('./k8s_noctiabot_example.yaml', 'k8s_noctiabot.yaml')
+                    shutil.copy2('./kubernetes.yaml', 'k8s_noctiabot.yaml')
                     filedata = ""
+
                     with open('k8s_noctiabot.yaml', 'r', encoding='utf-8') as file:
                         filedata = file.read()
-                        filedata = filedata.replace('${k8s.deploy.path}', deploy_path)
-                        filedata = filedata.replace('${k8s.container.image}', container_image)
-                        filedata = filedata.replace('${k8s.container.image.secret}', img_pull_sec)
+
+                        for key, value in settings.items():
+                            filedata = filedata.replace('${'+key+'}', str(value))
 
                     with open('k8s_noctiabot.yaml', 'w', encoding='utf-8') as file:
                         file.write(filedata)

@@ -1,10 +1,8 @@
 {
-    "app.version": "v20260122",
     "discord.bot.token": "",
     "discord.test.guild.id": 0,
     "discord.main.guild.id": 0,
-
-    "k8s.deploy.path": "",
+    
     "k8s.container.image": "",
     "k8s.container.image.secret": "",
 

@@ -6,8 +6,7 @@ RUN apt update
 RUN apt install -y git
 
 # Get the app
-RUN git clone -b main https://github.com/noctialisy/noctia-discordbot.git .
-RUN mv settings_example.json settings.json
+RUN git clone -b dev https://github.com/noctialisy/noctia-discordbot.git .
 
 # Install venv
 RUN python -m venv ./venv/

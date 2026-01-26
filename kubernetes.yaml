@@ -1,0 +1,46 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: noctia-discordbot
+  labels:
+    app: noctia-discordbot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: noctia-discordbot
+  template:
+    metadata:
+      labels:
+        app: noctia-discordbot
+    spec:
+      containers:
+      - name: python
+        image: "${k8s.container.image}"
+        imagePullPolicy: IfNotPresent
+        resources:
+          limits:
+            cpu: 500m
+            memory: 512M
+        env:
+          - name: PYTHONUNBUFFERED
+            value: "1"
+          - name: discord.bot.token
+            value: "${discord.bot.token}"
+          - name: discord.test.guild.id
+            value: "${discord.test.guild.id}"
+          - name: discord.main.guild.id
+            value: "${discord.main.guild.id}"
+          - name: db_user
+            value: "${db_user}"
+          - name: db_pass
+            value: "${db_pass}"
+          - name: db_host
+            value: "${db_host}"
+          - name: db_port
+            value: "${db_port}"
+          - name: db_name
+            value: "${db_name}"
+      imagePullSecrets:
+        - name: ${k8s.container.image.secret}
