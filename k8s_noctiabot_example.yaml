@@ -16,18 +16,10 @@ spec:
       labels:
         app: noctia-discordbot
     spec:
-      volumes:
-      - name: noctia-discordbot-source
-        hostPath:
-          path: ${k8s.deploy.path}
-
       containers:
       - name: python
         image: "${k8s.container.image}"
         imagePullPolicy: IfNotPresent
-        volumeMounts:
-          - name: noctia-discordbot-source
-            mountPath: /usr/src/app/
         env:
           - name: PYTHONUNBUFFERED
             value: "1"

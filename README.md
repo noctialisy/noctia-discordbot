@@ -46,6 +46,7 @@ Test requires 2 databases:
 - Generating stories using AI (at first until I can write down an algorithm to procedurally generate things)
 - Eventually (probably) releasing the bot to the public so people will have their D&D game engine for D&D based games that can run in discord, a browser or a standalone game app
 - Splitting the game code and the bot so that the game can be ported elsewhere
+- Test commands
 
 Currently working on:
 - Database and items
