@@ -28,7 +28,7 @@ class Entity(GameSystem):
         self.description = ""
         self.backstory = ""
 
-        self.char_role = "Warrior"
+        self.char_role = Role("Warrior")
         self.char_level = 1
         self.role_level = 1
         self.mhp=0
@@ -178,7 +178,6 @@ class Entity(GameSystem):
             save_data['raw_stats'] = json.dumps(self.get_raw_stats())
             save_data['stats'] = json.dumps(self.get_stats())
             save_data['skills'] = json.dumps(self.get_skills())
-            save_data['abilities'] = json.dumps(self.get_abilities())
             save_data['inventory'] = self.get_inventory().print()
             save_data['combat_state'] = json.dumps(self.get_combat_state())
 
@@ -691,7 +690,6 @@ class Entity(GameSystem):
             nsfw = 0
 
         self.nsfw = nsfw
-        self.save()
     
     def set_entity_id(self, entity_id):
         if type(entity_id) is not str:
