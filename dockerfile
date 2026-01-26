@@ -16,4 +16,4 @@ RUN /usr/src/app/venv/bin/python -m pip install --no-cache-dir -r requirements.t
 RUN useradd app
 USER app
 
-CMD ["/usr/src/app/venv/bin/python", "main.py"]
+CMD ["sh", "start.sh"]
