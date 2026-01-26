@@ -28,17 +28,17 @@ class GameSystem:
 
         else:
             self.settings = {
-                "discord.bot.token": os.environ['discord.bot.token'],
-                "discord.test.guild.id": os.environ['discord.test.guild.id'],
-                "discord.main.guild.id": os.environ['discord.main.guild.id'],
+                "discord.bot.token": os.getenv("DISCORD_BOT_TOKEN", ""),
+                "discord.test.guild.id": int(os.getenv("DISCORD_TEST_GUILD", 0)),
+                "discord.main.guild.id": int(os.getenv("DISCORD_MAIN_GUILD", 0)),
 
-                "db_user": os.environ['db_user'],
-                "db_pass": os.environ['db_pass'],
-                "db_host": os.environ['db_host'],
-                "db_port": os.environ['db_port'],
-                "db_name": os.environ['db_name'],
+                "db_user": os.getenv('DB_USER', "root"),
+                "db_pass": os.getenv('DB_PASS', "root"),
+                "db_host": os.getenv('DB_HOST', "127.0.0.1"),
+                "db_port": int(os.getenv('DB_PORT', "3306")),
+                "db_name": os.getenv('DB_NAME', "game_example"),
 
-                "debug": os.environ['app_debug']
+                "debug": os.getenv('APP_DEBUG', "false")
             }
 
         if self.settings['app_debug'] == 'true':

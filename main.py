@@ -31,9 +31,9 @@ if os.path.exists('./settings.json'):
         bot = discord.Bot(intents=intents)
 
 else:
-    discord_test_guild_id = os.environ["discord.test.guild.id"]
-    discord_main_guild_id = os.environ["discord.main.guild.id"]
-    token = os.environ["discord.bot.token"]
+    discord_test_guild_id = int(os.getenv("DISCORD_TEST_GUILD", 0))
+    discord_main_guild_id = int(os.getenv("DISCORD_MAIN_GUILD", 0))
+    token = os.getenv("DISCORD_BOT_TOKEN", "")
 
 bot = discord.Bot(intents=intents)
 

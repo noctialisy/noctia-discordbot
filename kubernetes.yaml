@@ -26,23 +26,23 @@ spec:
         env:
           - name: PYTHONUNBUFFERED
             value: "1"
-          - name: discord.bot.token
+          - name: DISCORD_BOT_TOKEN
             value: "${discord.bot.token}"
-          - name: discord.test.guild.id
+          - name: DISCORD_TEST_GUILD
             value: "${discord.test.guild.id}"
-          - name: discord.main.guild.id
+          - name: DISCORD_MAIN_GUILD
             value: "${discord.main.guild.id}"
-          - name: db_user
+          - name: DB_USER
             value: "${db_user}"
-          - name: db_pass
+          - name: DB_PASS
             value: "${db_pass}"
-          - name: db_host
+          - name: DB_HOST
             value: "${db_host}"
-          - name: db_port
+          - name: DB_PORT
             value: "${db_port}"
-          - name: db_name
+          - name: DB_NAME
             value: "${db_name}"
-          - name: app_debug
+          - name: APP_DEBUG
             value: "${app_debug}"
       imagePullSecrets:
         - name: ${k8s.container.image.secret}
