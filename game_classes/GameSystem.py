@@ -37,8 +37,12 @@ class GameSystem:
                 "db_host": os.environ['db_host'],
                 "db_port": os.environ['db_port'],
                 "db_name": os.environ['db_name'],
+
+                "debug": os.environ['debug']
             }
 
+        if self.settings['app_debug'] == 'true':
+            print(self.settings)
 
         self.db_connection = mariadb.connect(
             user=self.settings['db_user'],

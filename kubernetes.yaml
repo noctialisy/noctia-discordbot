@@ -42,5 +42,7 @@ spec:
             value: "${db_port}"
           - name: db_name
             value: "${db_name}"
+          - name: app_debug
+            value: "${app_debug}"
       imagePullSecrets:
         - name: ${k8s.container.image.secret}
