@@ -38,7 +38,7 @@ class GameSystem:
                 "db_port": int(os.getenv('DB_PORT', "3306")),
                 "db_name": os.getenv('DB_NAME', "game_example"),
 
-                "debug": os.getenv('APP_DEBUG', "false")
+                "app_debug": os.getenv('APP_DEBUG', "false")
             }
 
         if self.settings['app_debug'] == 'true':
