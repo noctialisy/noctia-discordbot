@@ -1,7 +1,6 @@
 # Main imports
 # -------------------------------------
 import os, json, random, discord
-from discord.ext import commands
 from discord.commands import option
 
 
