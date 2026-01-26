@@ -38,7 +38,7 @@ class GameSystem:
                 "db_port": os.environ['db_port'],
                 "db_name": os.environ['db_name'],
 
-                "debug": os.environ['debug']
+                "debug": os.environ['app_debug']
             }
 
         if self.settings['app_debug'] == 'true':
