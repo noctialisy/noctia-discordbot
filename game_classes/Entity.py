@@ -321,9 +321,12 @@ class Entity(GameSystem):
         return ret_value
         
     
-    def roll_dice(self, dice_type, quantity=1):
+    def roll_dice(self, dice_type, quantity=1, mod=0):
+        if mod != 0 and mod in self.STATS:
+            mod = self.get_modifier(mod)
+
         dice = Dice(dice_type)
-        return dice.roll(quantity)
+        return dice.roll(quantity, mod)
 
     def has_unspent_stats(self):
         """

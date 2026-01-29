@@ -12,13 +12,13 @@ class Dice:
             self.dice_type = str(dice_type)
             self.dice_value = int(self.dice_type.split("d")[1])
 
-    def roll(self, quantity=1):
+    def roll(self, quantity=1, mod=0):
         result = []
         step = 0
 
         if int(quantity) >= 1:
             while step < int(quantity):
-                result.append(random.randint(1, self.dice_value))
+                result.append(random.randint(1, self.dice_value + mod))
                 step += 1
             
         return result
