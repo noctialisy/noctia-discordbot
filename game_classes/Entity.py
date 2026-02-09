@@ -463,7 +463,7 @@ class Entity(GameSystem):
             ability_name = self.perform_enemy_battle_logic()
 
         # Ask the role class to do ability check and dmg calcs
-        return self.char_role.use_ability(self, self.mp, self.sp, ability_name, targets)
+        return self.char_role.use_ability(self, ability_name, targets)
     
     def apply_dmg(self, dmg_amt):
         drops = {}

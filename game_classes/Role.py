@@ -55,7 +55,7 @@ class Role(GameSystem):
     # =========================================================
     # Main methods
     # =========================================================
-    def use_ability(self, entity, mp, sp, ability_name, trg_entities=[]):
+    def use_ability(self, entity, ability_name, trg_entities=[]):
         ability = ''
 
         if type(self.role_abilities) is str:
